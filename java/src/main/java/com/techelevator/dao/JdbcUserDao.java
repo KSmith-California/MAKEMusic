@@ -26,6 +26,7 @@ public class JdbcUserDao implements UserDao {
 
     @Override
     public User getUserById(int userId) {
+        // TODO: Properly handle user does not exist
         User user = null;
         String sql = "SELECT user_id, username, password_hash, role FROM users WHERE user_id = ?";
         try {
@@ -57,6 +58,7 @@ public class JdbcUserDao implements UserDao {
 
     @Override
     public User getUserByUsername(String username) {
+        // TODO: Validate username (case-insensitive and trimmed)
         if (username == null) throw new IllegalArgumentException("Username cannot be null");
         User user = null;
         String sql = "SELECT user_id, username, password_hash, role FROM users WHERE username = LOWER(TRIM(?));";
@@ -73,6 +75,7 @@ public class JdbcUserDao implements UserDao {
 
     @Override
     public User createUser(RegisterUserDto user) {
+        // TODO: Verify password hashing
         User newUser = null;
         String insertUserSql = "INSERT INTO users (username, password_hash, role) values (LOWER(TRIM(?)), ?, ?) RETURNING user_id";
         String password_hash = new BCryptPasswordEncoder().encode(user.getPassword());
