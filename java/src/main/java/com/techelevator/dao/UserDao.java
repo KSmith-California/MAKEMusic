@@ -6,15 +6,21 @@ import com.techelevator.model.User;
 import java.util.List;
 
 public interface UserDao {
-    //TODO: Retrieve all users
+    //Retrieve all users
     List<User> getUsers();
 
-    // TODO: Error handling if user ID doesn't exist
+    //Error handling if user ID doesn't exist
     User getUserById(int id);
 
-    // TODO: Handle username as case-insensitive
+    // Handle username as case-insensitive
     User getUserByUsername(String username);
 
-    // TODO: Validate password hashing
+    //Validate password hashing
     User createUser(RegisterUserDto user);
+
+    //Retrieve DJs only
+    List<User> getDJs();
+
+    //Retrieve Hosts only
+    List<User> getHosts();
 }
