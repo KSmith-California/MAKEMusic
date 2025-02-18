@@ -13,29 +13,30 @@ public class SecurityUtils {
     private SecurityUtils() {
     }
 
-    /**
-     * Get the login of the current user.
-     *
-     * @return the login of the current user.
-     */
     public static String getCurrentUsername() {
         final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null) {
-            LOG.debug("no authentication in security context found");
+            LOG.debug("No authentication in security context found");
             return null;
         }
 
-        String username = null;
         if (authentication.getPrincipal() instanceof UserDetails) {
-            UserDetails springSecurityUser = (UserDetails) authentication.getPrincipal();
-            username = springSecurityUser.getUsername();
+            return ((UserDetails) authentication.getPrincipal()).getUsername();
         } else if (authentication.getPrincipal() instanceof String) {
-            username = (String) authentication.getPrincipal();
+            return (String) authentication.getPrincipal();
         }
 
-        LOG.debug("found username '{}' in security context", username);
+        return null;
+    }
 
-        return username;
+    public static boolean userHasRole(String role) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getAuthorities() == null) {
+            return false;
+        }
+
+        return authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals(role));
     }
 }
