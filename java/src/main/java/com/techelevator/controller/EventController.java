@@ -5,16 +5,20 @@ import com.techelevator.dao.UserDao;
 import com.techelevator.model.Event;
 import com.techelevator.model.User;
 import com.techelevator.security.SecurityUtils;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * Controller for handling event-related requests.
+ * Provides endpoints for retrieving events based on user role (Guest, Host, DJ).
+ */
 @RestController
-@CrossOrigin
+@CrossOrigin // Allows requests from different origins (needed for frontend integration)
 @RequestMapping("/events")
 public class EventController {
 
@@ -27,57 +31,47 @@ public class EventController {
     }
 
     /**
-     * GET /events - Retrieve events based on user role
-     * Guests see all events, Hosts and DJs see only their events.
+     * Retrieves a list of events.
      */
     @GetMapping
-    public List<Event> getEvents() {
-        String currentUsername = SecurityUtils.getCurrentUsername();
+    public List<Event> getEvents(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
+            @RequestParam(required = false) Integer djId
+    ) {
+        String currentUsername = SecurityUtils.getCurrentUsername(); // Retrieve logged-in user's username
 
         if (currentUsername == null) {
-            return eventDao.findEventsForGuest(); // Guests see all events
+            // If no user is logged in, return all public events (Guests)
+            return eventDao.findFilteredEvents(name, date, djId);
         }
 
+        // Retrieve user details from database
         User user = userDao.getUserByUsername(currentUsername);
-        String role = user.getAuthorities().iterator().next().getName(); // Single role
+        if (user == null) {
+            // Prevents null user error and returns an appropriate HTTP response
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found. Please log in.");
+        }
 
+        // Ensure the user has at least one role before proceeding
+        if (user.getAuthorities().isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User has no assigned role.");
+        }
+
+        // Determine user role and return the appropriate events
+        String role = user.getAuthorities().iterator().next().getName();
         switch (role) {
             case "ROLE_DJ":
-                return eventDao.findEventsForDJ(user.getId());
+                return eventDao.findEventsByDJ(user.getId()); // DJs see only their events
             case "ROLE_HOST":
-                return eventDao.findEventsForHost(user.getId());
+                return eventDao.findEventsByHost(user.getId()); // Hosts see only their events
             default:
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied.");
         }
     }
 
     /**
-     * POST /events - Create a new event (Only authenticated users)
-     */
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public Event createEvent(@RequestBody Event event, Principal principal) {
-        if (principal == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "You must be logged in to create an event.");
-        }
-
-        // Get the logged-in user
-        String username = principal.getName();
-        User user = userDao.getUserByUsername(username);
-
-        if (user == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found.");
-        }
-
-        // Set the event owner
-        event.setUserId(user.getId());
-
-        // Save event in database
-        return eventDao.createEvent(event);
-    }
-
-    /**
-     * GET /events/{id} - Retrieve a single event by ID
+     * Retrieves details of a single event by ID.
      */
     @GetMapping("/{id}")
     public Event getEventById(@PathVariable int id) {
@@ -86,46 +80,5 @@ public class EventController {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found.");
         }
         return event;
-    }
-
-    /**
-     * PUT /events/{id} - Update an event (Only event owner can update)
-     */
-    @PutMapping("/{id}")
-    public Event updateEvent(@PathVariable int id, @RequestBody Event updatedEvent, Principal principal) {
-        Event existingEvent = eventDao.findEventById(id);
-        if (existingEvent == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found.");
-        }
-
-        // Ensure only the event owner can update it
-        String username = principal.getName();
-        User user = userDao.getUserByUsername(username);
-        if (user.getId() != existingEvent.getUserId()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have permission to edit this event.");
-        }
-
-        return eventDao.updateEvent(id, updatedEvent);
-    }
-
-    /**
-     * DELETE /events/{id} - Delete an event (Only event owner can delete)
-     */
-    @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteEvent(@PathVariable int id, Principal principal) {
-        Event existingEvent = eventDao.findEventById(id);
-        if (existingEvent == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found.");
-        }
-
-        // Ensure only the event owner can delete it
-        String username = principal.getName();
-        User user = userDao.getUserByUsername(username);
-        if (user.getId() != existingEvent.getUserId()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have permission to delete this event.");
-        }
-
-        eventDao.deleteEvent(id);
     }
 }

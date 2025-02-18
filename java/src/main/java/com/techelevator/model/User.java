@@ -1,103 +1,91 @@
 package com.techelevator.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * Represents a User in the system.
+ * A user has a unique ID, username, password, and assigned roles.
+ */
 public class User {
 
    private int id;
    private String username;
    @JsonIgnore
    private String password;
-   @JsonIgnore
-   private boolean activated;
-   private Set<Authority> authorities = new HashSet<>();
+   private Set<Authority> authorities;
 
-   public User() { }
+   public User() {
+      this.authorities = new HashSet<>();
+   }
 
-   public User(int id, String username, String password, String authorities) {
+   public User(int id, String username, String password, String role) {
       this.id = id;
       this.username = username;
       this.password = password;
-      if (authorities != null) this.setAuthorities(authorities);
-      this.activated = true;
+      this.authorities = new HashSet<>();
+
+      // Convert role string into a Set of Authority objects
+      if (role != null) {
+         this.authorities.add(new Authority(role));
+      }
    }
 
+   /**
+    * Gets the unique identifier of the user.
+    */
    public int getId() {
       return id;
    }
 
+   /**
+    * Sets the unique identifier of the user.
+    */
    public void setId(int id) {
       this.id = id;
    }
 
+   /**
+    * Gets the username of the user.
+    */
    public String getUsername() {
       return username;
    }
 
+   /**
+    * Sets the username of the user.
+    */
    public void setUsername(String username) {
       this.username = username;
    }
 
+   /**
+    * Gets the hashed password of the user.
+    */
    public String getPassword() {
       return password;
    }
 
+   /**
+    * Sets the hashed password of the user.
+    */
    public void setPassword(String password) {
       this.password = password;
    }
 
-   public boolean isActivated() {
-      return activated;
-   }
-
-   public void setActivated(boolean activated) {
-      this.activated = activated;
-   }
-
+   /**
+    * Gets the set of authorities (roles) assigned to the user.
+    */
    public Set<Authority> getAuthorities() {
       return authorities;
    }
 
+   /**
+    * Sets the authorities (roles) assigned to the user.
+    */
    public void setAuthorities(Set<Authority> authorities) {
       this.authorities = authorities;
-   }
-
-   public void setAuthorities(String authorities) {
-      String[] roles = authorities.split(",");
-      for (String role : roles) {
-         String authority = role.contains("ROLE_") ? role : "ROLE_" + role;
-         this.authorities.add(new Authority(authority));
-      }
-   }
-
-   @Override
-   public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-      User user = (User) o;
-      return id == user.id &&
-              activated == user.activated &&
-              Objects.equals(username, user.username) &&
-              Objects.equals(password, user.password) &&
-              Objects.equals(authorities, user.authorities);
-   }
-
-   @Override
-   public int hashCode() {
-      return Objects.hash(id, username, password, activated, authorities);
-   }
-
-   @Override
-   public String toString() {
-      return "User{" +
-              "id=" + id +
-              ", username='" + username + '\'' +
-              ", activated=" + activated +
-              ", authorities=" + authorities +
-              '}';
    }
 }

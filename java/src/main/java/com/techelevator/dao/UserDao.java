@@ -5,22 +5,39 @@ import com.techelevator.model.User;
 
 import java.util.List;
 
+/**
+ * DAO Interface for managing user-related database operations.
+ * Defines methods for retrieving users, creating new users, and filtering users by roles.
+ */
 public interface UserDao {
-    //Retrieve all users
+
+    /**
+     * Retrieves a list of all users.
+     */
     List<User> getUsers();
 
-    //Error handling if user ID doesn't exist
+    /**
+     * Retrieves a user by their unique ID.
+     */
     User getUserById(int id);
 
-    // Handle username as case-insensitive
+    /**
+     * Retrieves a user by their username.
+     */
     User getUserByUsername(String username);
 
-    //Validate password hashing
+    /**
+     * Registers a new user in the system.
+     */
     User createUser(RegisterUserDto user);
 
-    //Retrieve DJs only
-    List<User> getDJs();
-
-    //Retrieve Hosts only
+    /**
+     * Retrieves all users assigned as Hosts.
+     */
     List<User> getHosts();
+
+    /**
+     * Retrieves all users assigned as DJs.
+     */
+    List<User> getDJs();
 }

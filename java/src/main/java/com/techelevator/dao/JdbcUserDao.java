@@ -1,107 +1,41 @@
 package com.techelevator.dao;
 
-import com.techelevator.exception.DaoException;
-import com.techelevator.model.User;
-import com.techelevator.model.RegisterUserDto;
 import com.techelevator.model.Authority;
+import com.techelevator.model.RegisterUserDto;
+import com.techelevator.model.User;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * DAO for handling user-related database operations.
+ * This class allows user creation, retrieval, and role-based queries.
+ */
 @Component
 public class JdbcUserDao implements UserDao {
 
     private final JdbcTemplate jdbcTemplate;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
+    /**
+     * Constructor to initialize JdbcTemplate for database queries.
+     */
     public JdbcUserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @Override
-    public List<User> getUsers() {
-        String sql = "SELECT user_id, username, password_hash, role FROM users";
-        List<User> users = new ArrayList<>();
-
-        try {
-            SqlRowSet results = jdbcTemplate.queryForRowSet(sql);
-            while (results.next()) {
-                users.add(mapRowToUser(results));
-            }
-        } catch (CannotGetJdbcConnectionException e) {
-            throw new DaoException("Unable to connect to the database", e);
-        }
-
-        return users;
-    }
-
-
-    @Override
-    public User getUserById(int id) {
-        // ✅ FIX: Now correctly implements getUserById
-        String sql = "SELECT user_id, username, password_hash, role FROM users WHERE user_id = ?";
-        try {
-            SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, id);
-            if (rowSet.next()) {
-                return mapRowToUser(rowSet);
-            }
-        } catch (CannotGetJdbcConnectionException e) {
-            throw new DaoException("Unable to connect to server or database", e);
-        }
-        return null;
-    }
-    @Override
-    public User getUserByUsername(String username) {
-        String sql = "SELECT user_id, username, password_hash, role, activated FROM users WHERE username = LOWER(TRIM(?))";
-        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, username);
-
-        if (rowSet.next()) {
-            User user = new User();
-            user.setId(rowSet.getInt("user_id"));
-            user.setUsername(rowSet.getString("username"));
-            user.setPassword(rowSet.getString("password_hash"));
-            user.setActivated(rowSet.getBoolean("activated")); // ✅ Ensure activated is properly retrieved
-
-            Set<Authority> authorities = new HashSet<>();
-            authorities.add(new Authority(rowSet.getString("role")));
-            user.setAuthorities(authorities);
-
-            return user;
-        }
-        return null;
-    }
-
-    @Override
-    public List<User> getHosts() {
-        String sql = "SELECT user_id, username FROM users WHERE role = 'ROLE_HOST'";
-        List<User> hosts = new ArrayList<>();
-        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql);
-
-        while (rowSet.next()) {
-            hosts.add(mapRowToUser(rowSet));
-        }
-        return hosts;
-    }
-
-    @Override
-    public List<User> getDJs() {
-        String sql = "SELECT user_id, username FROM users WHERE role = 'ROLE_DJ'";
-        List<User> djs = new ArrayList<>();
-        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql);
-
-        while (rowSet.next()) {
-            djs.add(mapRowToUser(rowSet));
-        }
-        return djs;
-    }
+    /**
+     * Registers a new user in the database.
+     */
     @Override
     public User createUser(RegisterUserDto user) {
         if (user.getUsername() == null || user.getPassword() == null) {
@@ -110,36 +44,114 @@ public class JdbcUserDao implements UserDao {
 
         String username = user.getUsername().trim().toLowerCase();
         String passwordHash = passwordEncoder.encode(user.getPassword());
-
-        List<String> validRoles = List.of("ROLE_GUEST", "ROLE_HOST", "ROLE_DJ");
         String role = user.getRole().toUpperCase().startsWith("ROLE_") ? user.getRole().toUpperCase() : "ROLE_" + user.getRole().toUpperCase();
 
-        if (!validRoles.contains(role)) {
-            throw new IllegalArgumentException("Invalid role: " + role);
-        }
-
-        String insertUserSql = "INSERT INTO users (username, password_hash, role, activated) VALUES (?, ?, ?, ?) RETURNING user_id";
+        String sql = "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?) RETURNING user_id";
 
         try {
-            int newUserId = jdbcTemplate.queryForObject(insertUserSql, Integer.class, username, passwordHash, role, true);
+            int newUserId = jdbcTemplate.queryForObject(sql, Integer.class, username, passwordHash, role);
             return getUserById(newUserId);
         } catch (CannotGetJdbcConnectionException e) {
-            throw new DaoException("Unable to connect to server or database", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Database connection error");
         } catch (DataIntegrityViolationException e) {
-            throw new DaoException("Username already exists or data integrity violation", e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username already exists");
         }
     }
 
-    private User mapRowToUser(SqlRowSet rs) {
+    /**
+     * Retrieves a user by their unique ID.
+     */
+    @Override
+    public User getUserById(int userId) {
+        String sql = "SELECT user_id, username, password_hash, role FROM users WHERE user_id = ?";
+        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, userId);
+
+        if (rowSet.next()) {
+            return mapRowToUser(rowSet);
+        } else {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found.");
+        }
+    }
+
+    /**
+     * Retrieves a user by their username.
+     */
+    @Override
+    public User getUserByUsername(String username) {
+        if (username == null) throw new IllegalArgumentException("Username cannot be null");
+
+        String sql = "SELECT user_id, username, password_hash, role FROM users WHERE username = LOWER(TRIM(?))";
+        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, username);
+
+        if (rowSet.next()) {
+            return mapRowToUser(rowSet);
+        } else {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found in database.");
+        }
+    }
+
+    /**
+     * Retrieves a list of all users.
+     */
+    @Override
+    public List<User> getUsers() {
+        String sql = "SELECT user_id, username, role FROM users";
+        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql);
+
+        List<User> users = new ArrayList<>();
+        while (rowSet.next()) {
+            users.add(mapRowToUser(rowSet));
+        }
+        return users;
+    }
+
+    /**
+     * Retrieves all users assigned as DJs.
+     */
+    @Override
+    public List<User> getDJs() {
+        String sql = "SELECT user_id, username FROM users WHERE role = 'ROLE_DJ'";
+        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql);
+
+        List<User> djs = new ArrayList<>();
+        while (rowSet.next()) {
+            User user = new User();
+            user.setId(rowSet.getInt("user_id"));
+            user.setUsername(rowSet.getString("username"));
+            user.setAuthorities(Set.of(new Authority("ROLE_DJ")));
+            djs.add(user);
+        }
+        return djs;
+    }
+
+    /**
+     * Retrieves all users assigned as Hosts.
+     */
+    @Override
+    public List<User> getHosts() {
+        String sql = "SELECT user_id, username FROM users WHERE role = 'ROLE_HOST'";
+        SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql);
+
+        List<User> hosts = new ArrayList<>();
+        while (rowSet.next()) {
+            User user = new User();
+            user.setId(rowSet.getInt("user_id"));
+            user.setUsername(rowSet.getString("username"));
+            user.setAuthorities(Set.of(new Authority("ROLE_HOST")));
+            hosts.add(user);
+        }
+        return hosts;
+    }
+
+    /**
+     * Maps a row from the SQL result set to a User object.
+     */
+    private User mapRowToUser(SqlRowSet rowSet) {
         User user = new User();
-        user.setId(rs.getInt("user_id"));
-        user.setUsername(rs.getString("username"));
-        user.setPassword(rs.getString("password_hash"));
-
-        Set<Authority> authorities = new HashSet<>();
-        authorities.add(new Authority(rs.getString("role")));
-        user.setAuthorities(authorities);
-
+        user.setId(rowSet.getInt("user_id"));
+        user.setUsername(rowSet.getString("username"));
+        user.setPassword(rowSet.getString("password_hash"));
+        user.setAuthorities(Set.of(new Authority(rowSet.getString("role"))));
         return user;
     }
 }
