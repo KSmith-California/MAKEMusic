@@ -1,96 +1,66 @@
 package com.techelevator.model;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 /**
  * Represents an Event in the system.
- * An event has a unique ID, name, date, and assigned users (DJ and Host).
  */
 public class Event {
 
     private int eventID;
     private String name;
     private LocalDate eventDate;
-    private Integer djId;
-    private Integer hostId;
+    private LocalTime startTime;
+    private LocalTime endTime;
 
     public Event() {}
 
-    public Event(int eventID, String name, LocalDate eventDate, Integer djId, Integer hostId) {
+    public Event(int eventID, String name, LocalDate eventDate, LocalTime startTime, LocalTime endTime) {
         this.eventID = eventID;
         this.name = name;
         this.eventDate = eventDate;
-        this.djId = djId;
-        this.hostId = hostId;
+        this.startTime = startTime;
+        this.endTime = endTime;
     }
 
-    /**
-     * Gets the event's unique identifier.
-     */
     public int getEventID() {
         return eventID;
     }
 
-    /**
-     * Sets the event's unique identifier.
-     */
     public void setEventID(int eventID) {
         this.eventID = eventID;
     }
 
-    /**
-     * Gets the name of the event.
-     */
     public String getName() {
         return name;
     }
 
-    /**
-     * Sets the name of the event.
-     */
     public void setName(String name) {
         this.name = name;
     }
 
-    /**
-     * Gets the date of the event.
-     */
     public LocalDate getEventDate() {
         return eventDate;
     }
 
-    /**
-     * Sets the date of the event.
-     */
     public void setEventDate(LocalDate eventDate) {
         this.eventDate = eventDate;
     }
 
-    /**
-     * Gets the ID of the assigned DJ.
-     */
-    public Integer getDjId() {
-        return djId;
+    public LocalTime getStartTime() {
+        return startTime;
     }
 
-    /**
-     * Sets the ID of the assigned DJ.
-     */
-    public void setDjId(Integer djId) {
-        this.djId = djId;
+    public void setStartTime(LocalTime startTime) {
+        this.startTime = startTime;
     }
 
-    /**
-     * Gets the ID of the assigned Host.
-     */
-    public Integer getHostId() {
-        return hostId;
+    public LocalTime getEndTime() {
+        return endTime;
     }
 
-    /**
-     * Sets the ID of the assigned Host.
-     */
-    public void setHostId(Integer hostId) {
-        this.hostId = hostId;
+    public void setEndTime(LocalTime endTime) {
+        this.endTime = endTime;
     }
 }

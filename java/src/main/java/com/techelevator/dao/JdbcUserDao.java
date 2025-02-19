@@ -18,7 +18,6 @@ import java.util.Set;
 
 /**
  * DAO for handling user-related database operations.
- * This class allows user creation, retrieval, and role-based queries.
  */
 @Component
 public class JdbcUserDao implements UserDao {
@@ -26,9 +25,6 @@ public class JdbcUserDao implements UserDao {
     private final JdbcTemplate jdbcTemplate;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-    /**
-     * Constructor to initialize JdbcTemplate for database queries.
-     */
     public JdbcUserDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
@@ -44,7 +40,9 @@ public class JdbcUserDao implements UserDao {
 
         String username = user.getUsername().trim().toLowerCase();
         String passwordHash = passwordEncoder.encode(user.getPassword());
-        String role = user.getRole().toUpperCase().startsWith("ROLE_") ? user.getRole().toUpperCase() : "ROLE_" + user.getRole().toUpperCase();
+        String role = user.getRole().toUpperCase().startsWith("ROLE_")
+                ? user.getRole().toUpperCase()
+                : "ROLE_" + user.getRole().toUpperCase();
 
         String sql = "INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?) RETURNING user_id";
 
