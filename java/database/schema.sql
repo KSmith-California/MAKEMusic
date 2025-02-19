@@ -13,7 +13,7 @@ CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(200) NOT NULL,
-    role VARCHAR(50) NOT NULL CHECK (role IN ('USER', 'DJ', 'HOST', 'ADMIN'))
+    role VARCHAR(50) NOT NULL CHECK (role IN ('ROLE_USER', 'DJ', 'HOST', 'ROLE_ADMIN'))
 );
 
 -- Events Table
@@ -23,7 +23,7 @@ CREATE TABLE events (
     event_date DATE NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
-    created_by INT NOT NULL,
+    created_by INT,
     FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
@@ -65,5 +65,10 @@ CREATE TABLE playlist_songs (
     FOREIGN KEY (song_id) REFERENCES songs(song_id) ON DELETE CASCADE,
     FOREIGN KEY (added_by) REFERENCES users(user_id) ON DELETE SET NULL
 );
+
+
+INSERT INTO events (event_name, event_date, start_time, end_time) VALUES 
+('Wedding', '12-6-25', '12:30', '6:00'),
+('Birthday Party', '12-8-25', '10:00', '4:00');
 
 COMMIT TRANSACTION;
