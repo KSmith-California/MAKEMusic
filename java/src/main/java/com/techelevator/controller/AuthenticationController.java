@@ -1,7 +1,6 @@
 package com.techelevator.controller;
 
 import jakarta.validation.Valid;
-
 import com.techelevator.exception.DaoException;
 import com.techelevator.model.*;
 import org.springframework.http.HttpHeaders;
@@ -14,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import com.techelevator.dao.UserDao;
 import com.techelevator.security.jwt.JWTFilter;
@@ -25,7 +25,7 @@ public class AuthenticationController {
 
     private final TokenProvider tokenProvider;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
-    private UserDao userDao;
+    private final UserDao userDao;
 
     public AuthenticationController(TokenProvider tokenProvider, AuthenticationManagerBuilder authenticationManagerBuilder, UserDao userDao) {
         this.tokenProvider = tokenProvider;
@@ -33,9 +33,8 @@ public class AuthenticationController {
         this.userDao = userDao;
     }
 
-    @RequestMapping(path = "/login", method = RequestMethod.POST)
+    @PostMapping("/login")
     public ResponseEntity<LoginResponseDto> login(@Valid @RequestBody LoginDto loginDto) {
-
         UsernamePasswordAuthenticationToken authenticationToken =
                 new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword());
 
@@ -43,32 +42,25 @@ public class AuthenticationController {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = tokenProvider.createToken(authentication, false);
 
-        User user;
-        try {
-            user = userDao.getUserByUsername(loginDto.getUsername());
-        } catch (DaoException e) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Username or password is incorrect.");
-        }
+        User user = userDao.getUserByUsername(loginDto.getUsername());
 
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add(JWTFilter.AUTHORIZATION_HEADER, "Bearer " + jwt);
         return new ResponseEntity<>(new LoginResponseDto(jwt, user), httpHeaders, HttpStatus.OK);
     }
 
+    @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    @RequestMapping(path = "/register", method = RequestMethod.POST)
     public void register(@Valid @RequestBody RegisterUserDto newUser) {
-        try {
-            if (userDao.getUserByUsername(newUser.getUsername()) != null) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User already exists.");
-            } else {
-                userDao.createUser(newUser);
-            }
+        if (!newUser.getPassword().equals(newUser.getConfirmPassword())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Passwords do not match.");
         }
-        catch (DaoException e) {
+        try {
+            userDao.createUser(newUser);
+        } catch (DataIntegrityViolationException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username already exists.");
+        } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "User registration failed.");
         }
     }
-
 }
-

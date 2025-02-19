@@ -45,10 +45,7 @@ public class UserModelDetailsService implements UserDetailsService {
     }
 
     private org.springframework.security.core.userdetails.User createSpringSecurityUser(String lowercaseLogin, User user) {
-        if (!user.isActivated()) {
-            throw new UserNotActivatedException("User " + lowercaseLogin + " was not activated");
-        }
-
+        // ❌ REMOVE activation check because we are no longer using it
         List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
         Set<Authority> userAuthorities = user.getAuthorities();
         for (Authority authority : userAuthorities) {
@@ -60,4 +57,3 @@ public class UserModelDetailsService implements UserDetailsService {
                 grantedAuthorities);
     }
 }
-
