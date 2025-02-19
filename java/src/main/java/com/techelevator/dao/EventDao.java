@@ -10,4 +10,7 @@ public interface EventDao {
     Event findEventById(int eventId);
     Event createEvent(Event event);
     List<Event> findFilteredEvents(String name, LocalDate date);
+
+    // New method to assign a host to an event
+    void assignHost(int eventId, int hostId);
 }

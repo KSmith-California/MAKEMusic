@@ -22,14 +22,14 @@ public class JdbcEventDao implements EventDao {
 
     @Override
     public List<Event> findAllEvents() {
-        String sql = "SELECT event_id, name, event_date, start_time, end_time FROM events";
+        String sql = "SELECT event_id, event_name, event_date, start_time, end_time FROM events";
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql);
         return mapEvents(rowSet);
     }
 
     @Override
     public Event createEvent(Event event) {
-        String sql = "INSERT INTO events (name, event_date, start_time, end_time) " +
+        String sql = "INSERT INTO events (event_name, event_date, start_time, end_time) " +
                 "VALUES (?, ?, ?, ?) RETURNING event_id";
 
         try {
@@ -40,9 +40,9 @@ public class JdbcEventDao implements EventDao {
 
             int eventId = jdbcTemplate.queryForObject(sql, Integer.class,
                     event.getName(),
-                    java.sql.Date.valueOf(event.getEventDate()),  // ✅ Ensures correct DATE format
-                    java.sql.Time.valueOf(event.getStartTime().toString()),  // ✅ Converts LocalTime to TIME
-                    java.sql.Time.valueOf(event.getEndTime().toString()));   // ✅ Converts LocalTime to TIME
+                    java.sql.Date.valueOf(event.getEventDate()),
+                    java.sql.Time.valueOf(event.getStartTime().toString()),
+                    java.sql.Time.valueOf(event.getEndTime().toString()));
 
             event.setEventID(eventId);
             System.out.println("DEBUG: Event inserted successfully! ID: " + eventId);
@@ -55,7 +55,7 @@ public class JdbcEventDao implements EventDao {
 
     @Override
     public Event findEventById(int eventId) {
-        String sql = "SELECT event_id, name, event_date, start_time, end_time FROM events WHERE event_id = ?";
+        String sql = "SELECT event_id, event_name, event_date, start_time, end_time FROM events WHERE event_id = ?";
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, eventId);
 
         if (rowSet.next()) {
@@ -66,11 +66,11 @@ public class JdbcEventDao implements EventDao {
 
     @Override
     public List<Event> findFilteredEvents(String name, LocalDate date) {
-        StringBuilder sql = new StringBuilder("SELECT event_id, name, event_date, start_time, end_time FROM events WHERE 1=1");
+        StringBuilder sql = new StringBuilder("SELECT event_id, event_name, event_date, start_time, end_time FROM events WHERE 1=1");
         List<Object> params = new ArrayList<>();
 
         if (name != null && !name.isBlank()) {
-            sql.append(" AND LOWER(name) LIKE LOWER(?)");
+            sql.append(" AND LOWER(event_name) LIKE LOWER(?)");
             params.add("%" + name + "%");
         }
 
@@ -81,6 +81,13 @@ public class JdbcEventDao implements EventDao {
 
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql.toString(), params.toArray());
         return mapEvents(rowSet);
+    }
+
+    // New method to assign a host to an event
+    @Override
+    public void assignHost(int eventId, int hostId) {
+        String sql = "INSERT INTO event_hosts (event_id, user_id) VALUES (?, ?)";
+        jdbcTemplate.update(sql, eventId, hostId);
     }
 
     private List<Event> mapEvents(SqlRowSet rowSet) {
@@ -94,7 +101,7 @@ public class JdbcEventDao implements EventDao {
     private Event mapRowToEvent(SqlRowSet rowSet) {
         Event event = new Event();
         event.setEventID(rowSet.getInt("event_id"));
-        event.setName(rowSet.getString("name"));
+        event.setName(rowSet.getString("event_name"));  // Updated column name
         event.setEventDate(rowSet.getDate("event_date").toLocalDate());
         event.setStartTime(rowSet.getTime("start_time").toLocalTime());
         event.setEndTime(rowSet.getTime("end_time").toLocalTime());
