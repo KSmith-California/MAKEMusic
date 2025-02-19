@@ -22,32 +22,38 @@ public class JdbcEventDao implements EventDao {
 
     @Override
     public List<Event> findAllEvents() {
-        String sql = "SELECT event_id, event_name, event_date, start_time, end_time FROM events";
+        String sql = "SELECT event_id, event_name, event_date, start_time, end_time, created_by FROM events";
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql);
         return mapEvents(rowSet);
     }
 
     @Override
     public Event createEvent(Event event) {
-        String sql = "INSERT INTO events (event_name, event_date, start_time, end_time) " +
-                "VALUES (?, ?, ?, ?) RETURNING event_id";
-
+        String sql = "INSERT INTO events (event_name, event_date, start_time, end_time, created_by) " +
+                "VALUES (?, ?, ?, ?, ?) RETURNING event_id";
         try {
+            // Format the LocalTime values to "HH:mm:ss"
+            String formattedStartTime = event.getStartTime().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+            String formattedEndTime = event.getEndTime().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+
             System.out.println("DEBUG: Inserting event -> Name: " + event.getName() +
                     ", Date: " + event.getEventDate() +
-                    ", Start Time: " + event.getStartTime() +
-                    ", End Time: " + event.getEndTime());
+                    ", Start Time: " + formattedStartTime +
+                    ", End Time: " + formattedEndTime +
+                    ", Created By: " + event.getCreatedBy());
 
             int eventId = jdbcTemplate.queryForObject(sql, Integer.class,
                     event.getName(),
                     java.sql.Date.valueOf(event.getEventDate()),
-                    java.sql.Time.valueOf(event.getStartTime().toString()),
-                    java.sql.Time.valueOf(event.getEndTime().toString()));
+                    java.sql.Time.valueOf(formattedStartTime),
+                    java.sql.Time.valueOf(formattedEndTime),
+                    event.getCreatedBy());
 
             event.setEventID(eventId);
             System.out.println("DEBUG: Event inserted successfully! ID: " + eventId);
             return event;
         } catch (Exception e) {
+            e.printStackTrace();  // Print full stack trace for detailed diagnosis
             System.out.println("ERROR: SQL Insert Failed. " + e.getMessage());
             throw new RuntimeException("Database error: " + e.getMessage());
         }
@@ -55,7 +61,7 @@ public class JdbcEventDao implements EventDao {
 
     @Override
     public Event findEventById(int eventId) {
-        String sql = "SELECT event_id, event_name, event_date, start_time, end_time FROM events WHERE event_id = ?";
+        String sql = "SELECT event_id, event_name, event_date, start_time, end_time, created_by FROM events WHERE event_id = ?";
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, eventId);
 
         if (rowSet.next()) {
@@ -66,7 +72,7 @@ public class JdbcEventDao implements EventDao {
 
     @Override
     public List<Event> findFilteredEvents(String name, LocalDate date) {
-        StringBuilder sql = new StringBuilder("SELECT event_id, event_name, event_date, start_time, end_time FROM events WHERE 1=1");
+        StringBuilder sql = new StringBuilder("SELECT event_id, event_name, event_date, start_time, end_time, created_by FROM events WHERE 1=1");
         List<Object> params = new ArrayList<>();
 
         if (name != null && !name.isBlank()) {
@@ -83,7 +89,6 @@ public class JdbcEventDao implements EventDao {
         return mapEvents(rowSet);
     }
 
-    // New method to assign a host to an event
     @Override
     public void assignHost(int eventId, int hostId) {
         String sql = "INSERT INTO event_hosts (event_id, user_id) VALUES (?, ?)";
@@ -101,10 +106,11 @@ public class JdbcEventDao implements EventDao {
     private Event mapRowToEvent(SqlRowSet rowSet) {
         Event event = new Event();
         event.setEventID(rowSet.getInt("event_id"));
-        event.setName(rowSet.getString("event_name"));  // Updated column name
+        event.setName(rowSet.getString("event_name"));  // Make sure this matches your DB column name
         event.setEventDate(rowSet.getDate("event_date").toLocalDate());
         event.setStartTime(rowSet.getTime("start_time").toLocalTime());
         event.setEndTime(rowSet.getTime("end_time").toLocalTime());
+        event.setCreatedBy(rowSet.getInt("created_by"));
         return event;
     }
 }
