@@ -2,6 +2,7 @@ import { createRouter as createRouter, createWebHistory } from 'vue-router'
 import { useStore } from 'vuex'
 
 // Import components
+import LandingPageView from '../views/LandingPageView.vue';
 import HomeView from '../views/HomeView.vue';
 import LoginView from '../views/LoginView.vue';
 import LogoutView from '../views/LogoutView.vue';
@@ -16,8 +17,17 @@ import RegisterView from '../views/RegisterView.vue';
  * If they have (or don't need to) they're allowed to go about their way.
  */
 const routes = [
+
   {
     path: '/',
+    name: 'landing',
+    component: LandingPageView,
+    meta: {
+      requiresAuth: false
+    }
+  },
+  {
+    path: '/home',
     name: 'home',
     component: HomeView,
     meta: {
