@@ -3,6 +3,11 @@
     
 
     <div>
+        <header class="header">
+            <img src="/landingGif.gif" alt="Header GIF" class="header-gif" />
+        </header>
+
+
         <div class="landing-page">
 
         <div class="container">
@@ -13,7 +18,7 @@
             </div>
 
             <div class="text">
-                <p> Popular Songs </p>
+                <p> TOP HITS </p>
             </div>  
 
             <div class="small-boxes-container">
@@ -70,15 +75,14 @@ export default {
 <style scoped>
 
     .header {
-        display: flex;
-        align-items: center;
-        padding: 10px;
+        width: 100%;
+        margin-bottom: 0px;
     }
 
-    .video {
-        height: 400px;
-        width: auto;
-        margin-right: 15px;
+    .header-gif {
+        width: 100%;
+        height:auto;
+        object-fit: cover;
     }
 
     .landing-page{
@@ -89,6 +93,7 @@ export default {
         padding: 20px;
         min-height: 100vh;
         box-sizing: border-box;
+        font-family: Arial, Helvetica, sans-serif;
     }
 
     .container {

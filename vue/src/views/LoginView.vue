@@ -1,7 +1,7 @@
 <template>
   <div id="login">
     <form v-on:submit.prevent="login">
-      <h1 >Please Sign In</h1>
+      <h1 >SIGN IN. LOG IN. TAP IN.</h1>
       <div role="alert" v-if="invalidCredentials">
         Invalid username and password!
       </div>
@@ -18,7 +18,7 @@
       </div>
       <button type="submit">Sign in</button>
       <p>
-      <router-link v-bind:to="{ name: 'register' }">Need an account? Sign up.</router-link></p>
+      <router-link v-bind:to="{ name: 'register' }">You look new. Sign Up!</router-link></p>
     </form>
   </div>
 </template>
@@ -61,6 +61,20 @@ export default {
 </script>
 
 <style scoped>
+
+#login {
+  background-image: url('/loginImage.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  font-family: Arial, Helvetica, sans-serif;
+  color: burlywood;
+}
 .form-input-group {
   margin-bottom: 1rem;
 }
