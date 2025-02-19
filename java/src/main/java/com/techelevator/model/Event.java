@@ -3,9 +3,6 @@ package com.techelevator.model;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-/**
- * Represents an Event in the system.
- */
 public class Event {
 
     private int eventID;
@@ -13,16 +10,20 @@ public class Event {
     private LocalDate eventDate;
     private LocalTime startTime;
     private LocalTime endTime;
+    private int createdBy; // New field for storing the DJ (creator) user ID
 
     public Event() {}
 
-    public Event(int eventID, String name, LocalDate eventDate, LocalTime startTime, LocalTime endTime) {
+    public Event(int eventID, String name, LocalDate eventDate, LocalTime startTime, LocalTime endTime, int createdBy) {
         this.eventID = eventID;
         this.name = name;
         this.eventDate = eventDate;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.createdBy = createdBy;
     }
+
+    // Getters and setters
 
     public int getEventID() {
         return eventID;
@@ -62,5 +63,13 @@ public class Event {
 
     public void setEndTime(LocalTime endTime) {
         this.endTime = endTime;
+    }
+
+    public int getCreatedBy() {
+        return createdBy;
+    }
+
+    public void setCreatedBy(int createdBy) {
+        this.createdBy = createdBy;
     }
 }
