@@ -13,7 +13,7 @@ CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(200) NOT NULL,
-    role VARCHAR(50) NOT NULL CHECK (role IN ('USER', 'DJ', 'HOST', 'ADMIN'))
+    role VARCHAR(50) NOT NULL CHECK (role IN ('ROLE_USER', 'ROLE_DJ', 'ROLE_HOST', 'ROLE_ADMIN'))
 );
 
 -- Events Table
