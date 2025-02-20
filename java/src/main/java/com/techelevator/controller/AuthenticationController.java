@@ -56,7 +56,7 @@ public class AuthenticationController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterUserDto newUser) {
         log.info("Registration attempt for username: {}", newUser.getUsername());
-
+        System.out.println(newUser);
         // Ensure passwords match
         if (!newUser.getPassword().equals(newUser.getConfirmPassword())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Passwords do not match.");
@@ -68,7 +68,7 @@ public class AuthenticationController {
         }
         // Validate role: only allow "HOST" or "DJ"
         String role = newUser.getRole().trim().toUpperCase();
-        if (!(role.equals("HOST") || role.equals("DJ"))) {
+        if (!(role.equals("HOST") || !role.equals("DJ") || !role.equals("ROLE_USER") || !role.equals("ROLE_ADMIN") || !role.equals("user"))) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Role must be either HOST or DJ.");
         }
         newUser.setRole(role); // ensure the role is stored consistently

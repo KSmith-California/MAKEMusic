@@ -42,10 +42,15 @@
 </template>
 
 <script>
+
+
 export default {
     name: 'LandingPageView',
     data() {
     return {
+
+        Events : [],
+
       totalBoxes: 16, // Total number of small boxes available
       visibleCount: 8, // Initial number of boxes to show
       increment: 8,   // Number of boxes to show on each click
@@ -66,7 +71,8 @@ export default {
       }
       this.isExpanded = !this.isExpanded;
       
-    }
+    },
+    
   }
 
 }
