@@ -24,6 +24,16 @@ public class RegisterUserDto {
         return username;
     }
 
+    @Override
+    public String toString() {
+        return "RegisterUserDto{" +
+                "username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                ", confirmPassword='" + confirmPassword + '\'' +
+                ", role='" + role + '\'' +
+                '}';
+    }
+
     public void setUsername(String username) {
         this.username = username;
     }

@@ -49,7 +49,7 @@ public class JdbcUserDao implements UserDao {
         try {
             int newUserId = jdbcTemplate.queryForObject(sql, Integer.class, username, passwordHash, role);
             return getUserById(newUserId);
-        } catch (CannotGetJdbcConnectionException e) {
+        } catch (CannotGetJdbcConnectionException e) {e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Database connection error");
         } catch (DataIntegrityViolationException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username already exists");
