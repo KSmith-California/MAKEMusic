@@ -127,15 +127,17 @@ public class JdbcUserDao implements UserDao {
      */
     @Override
     public List<User> getHosts() {
-        String sql = "SELECT user_id, username FROM users WHERE role = 'ROLE_HOST'";
+        String sql = "SELECT user_id, username, password_hash, role FROM users WHERE role = 'ROLE_HOST'";
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql);
-
         List<User> hosts = new ArrayList<>();
         while (rowSet.next()) {
             User user = new User();
             user.setId(rowSet.getInt("user_id"));
             user.setUsername(rowSet.getString("username"));
-            user.setAuthorities(Set.of(new Authority("ROLE_HOST")));
+            // For security, you might not want to set the password in the response.
+            user.setPassword(rowSet.getString("password_hash"));
+            // Authorities can be set if needed, e.g.:
+            // user.setAuthorities(Set.of(new Authority(rowSet.getString("role"))));
             hosts.add(user);
         }
         return hosts;
