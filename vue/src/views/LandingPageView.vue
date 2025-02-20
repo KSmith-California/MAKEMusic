@@ -1,96 +1,93 @@
 <template>
-    
-    
-
-    <div>
-        <header class="header">
-            <img src="/landingGif.gif" alt="Header GIF" class="header-gif" />
-        </header>
-
-
-        <div class="landing-page">
-
-        <div class="container">
-
-            <div class="large-boxes-container">
-                <div class="large-box">EVENT</div>
-                <div class="large-box">EVENT</div>
-            </div>
-
-            <div class="text">
-                <p> TOP HITS </p>
-            </div>  
-
-            <div class="small-boxes-container">
-                <div v-for="(box, index) in visibleBoxes" :key="index" class="small-box"></div>
-            </div>
-
+  <div>
+    <header class="header">
+      <img src="/landingGif.gif" alt="Header GIF" class="header-gif" />
+    </header>
+    <div class="landing-page">
+      <div class="container">
+        <div class="filter-container">
+          <input
+            type="text"
+            v-model="nameFilter"
+            placeholder="Filter by name"
+            class="filter-input"
+          />
+          <input
+            type="date"
+            v-model="dateFilter"
+            placeholder="Filter by date"
+            class="filter-input"
+          />
+          <div v-if="isDJOrHost">
+            <label>
+              <input
+                type="checkbox"
+                v-model="filterMyEvents"
+              />
+              Show Only My Events
+            </label>
+          </div>
         </div>
-    
-            <button v-on:click="toggleBoxes" class="see-more-button"> {{ isExpanded ? 'See Less' : 'See More' }}</button>
-
-            <footer class="footer">
-                <h1>Upcoming Events</h1>
-        
-
-        </footer>
-
-    
-
+        <div class="large-boxes-container">
+          <div v-for="(event, index) in filteredEvents" :key="index" class="large-box">
+            <p>{{ event.name }}</p>
+            <p>DATE: {{ event.eventDate }}</p>
+            <p>TIME: {{ event.startTime }} - {{ event.endTime }}</p>
+            <p></p>
+          </div>
         </div>
+      </div>
     </div>
+  </div>
 </template>
-
 <script>
-
-
+import EventService from '../services/EventService';
 export default {
-    name: 'LandingPageView',
-    data() {
+  name: 'LandingPageView',
+  data() {
     return {
-
-        Events : [],
-
-      totalBoxes: 16, // Total number of small boxes available
-      visibleCount: 8, // Initial number of boxes to show
-      increment: 8,   // Number of boxes to show on each click
-      isExpanded: false
-    }
+      events: [],
+      nameFilter: '',
+      dateFilter: '',
+      filterMyEvents: false, 
+      userRole: 'DJ', 
+    };
   },
   computed: {
-    visibleBoxes() {
-      return Array(this.visibleCount).fill({});
-    }
+    isDJOrHost() {
+      return this.userRole === 'DJ' || this.userRole === 'HOST';
+    },
+    filteredEvents() {
+      return this.events.filter(event => {
+        const matchesName = event.name.toLowerCase().includes(this.nameFilter.toLowerCase());
+        const matchesDate = this.dateFilter ? event.eventDate === this.dateFilter : true;
+        const matchesRole = this.filterMyEvents ? event.role === this.userRole : true;
+        return matchesName && matchesDate && matchesRole;
+      });
+    },
   },
   methods: {
-    toggleBoxes() {
-      if (this.isExpanded) {
-        this.visibleCount = 8;
-      } else {
-        this.visibleCount = this.totalBoxes;
-      }
-      this.isExpanded = !this.isExpanded;
-      
+    retrieveEvents() {
+      EventService.getEvents().then(response => {
+        this.events = response.data;
+      });
     },
-    
-  }
-
-}
+  },
+  created() {
+    this.retrieveEvents();
+  },
+};
 </script>
-
 <style scoped>
-
     .header {
         width: 100%;
         margin-bottom: 0px;
     }
-
     .header-gif {
         width: 100%;
         height:auto;
         object-fit: cover;
     }
-
     .landing-page{
         background-color: rgb(141, 103, 175);
         display: flex;
@@ -101,25 +98,22 @@ export default {
         box-sizing: border-box;
         font-family: Arial, Helvetica, sans-serif;
     }
-
     .container {
         display: flex;
-        flex-direction: column; 
+        flex-direction: column;
         gap: 20px;
         justify-content: flex-start;
-        align-items: center; 
+        align-items: center;
         max-width: 1200px;
         width: 100%;
-        flex-grow: 1; 
+        flex-grow: 1;
     }
-
     .large-boxes-container {
         display: flex;
         justify-content: center;
         width: 100%;
         gap: 20px;
     }
-
     .large-box {
         background-color: black;
         color: white;
@@ -133,7 +127,6 @@ export default {
         box-sizing: border-box;
         border-radius: 12px;
     }
-
     .small-boxes-container  {
         display: flex;
         flex-wrap: wrap;
@@ -141,7 +134,6 @@ export default {
         justify-content: center;
         width: 100%;
     }
-
     .small-box {
         background-color: whitesmoke;
         border-radius: 8px;
@@ -149,14 +141,12 @@ export default {
         height: 200px;
         width: calc(20% - 15px);
     }
-
     .text {
         text-align: center;
         font-size: 30px;
         color: black;
         margin: 20px 0;
     }
-
     .see-more-button {
         margin-top: 20px;
         padding: 10px;
@@ -167,12 +157,10 @@ export default {
         cursor: pointer;
         margin-bottom: 200px;
     }
-
     .see-more-button:hover {
         background-color: purple;
         color: white;
     }
-
     .footer {
         background-color: black;
         color: white;
@@ -185,7 +173,30 @@ export default {
         box-sizing: border-box;
         font-size: 18px;
     }
-
-
-
+    .large-box {
+    background-color: black;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 18px; 
+    font-weight: normal;
+    padding: 20px; 
+    height: 400px;
+    width: calc(40% - 10px);
+    box-sizing: border-box;
+    border-radius: 12px;
+    border: 2px solid white; 
+}
+.large-box p {
+    margin: 5px 0; 
+    font-size: 16px; 
+    font-weight: 400; 
+}
+.large-box p:first-child {
+    font-size: 20px; 
+    font-weight: bold;
+}
 </style>
