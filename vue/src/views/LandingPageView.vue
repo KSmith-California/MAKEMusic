@@ -5,7 +5,6 @@
     </header>
     <div class="landing-page">
       <div class="container">
-        <!-- Filter Inputs -->
         <div class="filter-container">
           <input
             type="text"
@@ -19,14 +18,22 @@
             placeholder="Filter by date"
             class="filter-input"
           />
+          <div v-if="isDJOrHost">
+            <label>
+              <input
+                type="checkbox"
+                v-model="filterMyEvents"
+              />
+              Show Only My Events
+            </label>
+          </div>
         </div>
-        <!-- Event Display -->
         <div class="large-boxes-container">
           <div v-for="(event, index) in filteredEvents" :key="index" class="large-box">
             <p>{{ event.name }}</p>
-            <p>{{ event.eventDate }}</p>
-            <p>{{ event.startTime }}</p>
-            <p>{{ event.endTime }}</p>
+            <p>DATE: {{ event.eventDate }}</p>
+            <p>TIME: {{ event.startTime }} - {{ event.endTime }}</p>
+            <p></p>
           </div>
         </div>
       </div>
@@ -42,18 +49,20 @@ export default {
       events: [],
       nameFilter: '',
       dateFilter: '',
+      filterMyEvents: false, 
+      userRole: 'DJ', 
     };
   },
   computed: {
+    isDJOrHost() {
+      return this.userRole === 'DJ' || this.userRole === 'HOST';
+    },
     filteredEvents() {
       return this.events.filter(event => {
-        const matchesName = event.name
-          .toLowerCase()
-          .includes(this.nameFilter.toLowerCase());
-        const matchesDate = this.dateFilter
-          ? event.eventDate === this.dateFilter
-          : true;
-        return matchesName && matchesDate;
+        const matchesName = event.name.toLowerCase().includes(this.nameFilter.toLowerCase());
+        const matchesDate = this.dateFilter ? event.eventDate === this.dateFilter : true;
+        const matchesRole = this.filterMyEvents ? event.role === this.userRole : true;
+        return matchesName && matchesDate && matchesRole;
       });
     },
   },
@@ -164,4 +173,30 @@ export default {
         box-sizing: border-box;
         font-size: 18px;
     }
+    .large-box {
+    background-color: black;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 18px; 
+    font-weight: normal;
+    padding: 20px; 
+    height: 400px;
+    width: calc(40% - 10px);
+    box-sizing: border-box;
+    border-radius: 12px;
+    border: 2px solid white; 
+}
+.large-box p {
+    margin: 5px 0; 
+    font-size: 16px; 
+    font-weight: 400; 
+}
+.large-box p:first-child {
+    font-size: 20px; 
+    font-weight: bold;
+}
 </style>
