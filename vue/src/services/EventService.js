@@ -9,7 +9,7 @@ export default {
         return http.get('/events');
     },
 
-    getEventById(eventId){
+    getEventById(eventId) {
         return axios.get(`${API_URL}/${eventId}`);
     },
 

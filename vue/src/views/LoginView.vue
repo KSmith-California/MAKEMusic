@@ -1,11 +1,11 @@
 <template>
   <div id="login">
-    <form v-on:submit.prevent="login">
-      <h1 >SIGN IN. LOG IN. TAP IN.</h1>
+    <form @submit.prevent="login">
+      <h1>SIGN IN. LOG IN. TAP IN.</h1>
       <div role="alert" v-if="invalidCredentials">
         Invalid username and password!
       </div>
-      <div role="alert" v-if="this.$route.query.registration">
+      <div role="alert" v-if="$route.query.registration">
         Thank you for registering, please sign in.
       </div>
       <div class="form-input-group">
@@ -18,7 +18,8 @@
       </div>
       <button type="submit">Sign in</button>
       <p>
-      <router-link v-bind:to="{ name: 'register' }">You look new. Sign Up!</router-link></p>
+        <router-link :to="{ name: 'register' }">You look new. Sign Up!</router-link>
+      </p>
     </form>
   </div>
 </template>
@@ -27,7 +28,7 @@
 import authService from "../services/AuthService";
 
 export default {
-  components: {},
+  name: "LoginView",
   data() {
     return {
       user: {
@@ -39,19 +40,27 @@ export default {
   },
   methods: {
     login() {
-      authService
-        .login(this.user)
+      authService.login(this.user)
         .then(response => {
-          if (response.status == 200) {
+          if (response.status === 200) {
+            // Store token and user in Vuex/localStorage
             this.$store.commit("SET_AUTH_TOKEN", response.data.token);
             this.$store.commit("SET_USER", response.data.user);
-            this.$router.push("/");
+
+            // Role-based redirection
+            const userRole = response.data.user.authorities[0].name;
+            if (userRole === "ROLE_DJ") {
+              this.$router.push({ name: "djPage" });
+            } else if (userRole === "ROLE_HOST") {
+              this.$router.push({ name: "hostPage" });
+            } else {
+              this.$router.push({ name: "landing" });
+            }
           }
         })
         .catch(error => {
           const response = error.response;
-
-          if (response.status === 401) {
+          if (response && response.status === 401) {
             this.invalidCredentials = true;
           }
         });
@@ -61,7 +70,6 @@ export default {
 </script>
 
 <style scoped>
-
 #login {
   background-image: url('/loginImage.jpg');
   background-size: cover;
