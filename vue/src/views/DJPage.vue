@@ -1,54 +1,38 @@
 <template>
   <div class="dj-page">
+    <!-- HEADER with Back Button -->
     <header class="dj-header">
       <h1 class="dj-title">DJ Dashboard</h1>
       <button class="back-btn" @click="goToLanding">Back to Landing</button>
     </header>
 
-    <!-- Turntable Section with Placeholder Song Data -->
-    <section class="turntable-section">
-      <h2>Now Playing</h2>
-      <div class="turntable">
-        <div class="record-container">
-          <div class="record-box">
-            <p>Current Song Image</p>
-          </div>
-          <p class="song-info">
-            {{ currentSong.title }}<br />by {{ currentSong.artist }}
-          </p>
-        </div>
-        <div class="record-container">
-          <div class="record-box">
-            <p>Next Song Image</p>
-          </div>
-          <p class="song-info">
-            {{ nextSong.title }}<br />by {{ nextSong.artist }}
-          </p>
-        </div>
-      </div>
+    <!-- CHANGE: Removed the entire turntable section and replaced with two images -->
+    <section class="dj-images-section">
+      <img src="MAKEDJ2.png" alt="DJ Image 1" class="dj-image" />
+      <img src="MAKEDJ3.png" alt="DJ Image 2" class="dj-image" />
     </section>
 
-    <!-- Events Section with Create Event Form -->
-    <section class="events-section">
+    <!-- CREATE EVENT FORM TOGGLE -->
+    <section class="create-event-section">
       <button class="toggle-btn" @click="toggleCreateForm">
         {{ showCreateForm ? 'Hide Create Event Form' : 'Create New Event' }}
       </button>
       <div v-if="showCreateForm" class="create-event-wrapper">
         <CreateEventView @event-created="fetchMyEvents" />
       </div>
-      <h2>My Events</h2>
-      <div v-if="events.length === 0">
-        <p>No events created yet.</p>
+    </section>
+
+    <!-- EVENTS LIST -->
+    <section class="events-section">
+      <h2 class="section-title">My Events</h2>
+      <div class="large-boxes-container">
+        <div v-for="(event, index) in events" :key="index" class="large-box">
+          <p>{{ event.name }}</p>
+          <p>DATE: {{ formatDate(event.eventDate) }}</p>
+          <p>TIME: {{ formatTime(event.startTime) }} - {{ formatTime(event.endTime) }}</p>
+          <p v-if="event.createdBy">DJ: {{ getDJUsername(event.createdBy) }}</p>
+        </div>
       </div>
-      <ul v-else class="event-list">
-        <li v-for="event in events" :key="event.eventID" class="event-item">
-          <span class="event-name">{{ event.name }}</span>
-          <span class="event-date">{{ formatDate(event.eventDate) }}</span>
-          <span class="event-time">
-            {{ formatTime(event.startTime) }} - {{ formatTime(event.endTime) }}
-          </span>
-        </li>
-      </ul>
     </section>
   </div>
 </template>
@@ -64,14 +48,12 @@ export default {
     return {
       showCreateForm: false,
       events: [],
-      // Placeholder song data; replace with real data later
-      currentSong: {
-        title: 'Placeholder Song',
-        artist: 'Placeholder Artist'
-      },
-      nextSong: {
-        title: 'Next Placeholder Song',
-        artist: 'Next Placeholder Artist'
+      userId: 4,    // For testing, set dynamically in production
+      userRole: 'DJ',
+      djUsernames: {
+        1: 'DJ Cool',
+        4: 'DJ Funky',
+        7: 'DJ Smooth'
       }
     };
   },
@@ -82,57 +64,51 @@ export default {
     toggleCreateForm() {
       this.showCreateForm = !this.showCreateForm;
     },
-    async fetchMyEvents() {
-      try {
-        const djId = this.$store.state.user.id;
-        const response = await EventService.getEvents('', '');
-        // Filter events created by the current DJ
-        this.events = response.data.filter(event => event.createdBy === djId);
-      } catch (error) {
-        console.error('Error fetching events:', error);
-      }
+    fetchMyEvents() {
+      EventService.getEvents().then(response => {
+        // Shows only events created by this DJ
+        this.events = response.data.filter(event => event.createdBy === this.userId);
+      });
+    },
+    getDJUsername(djId) {
+      return this.djUsernames[djId] || `DJ ${djId}`;
     },
     formatDate(dateStr) {
-      // Create a Date object from the string (assumed ISO format: YYYY-MM-DD)
       const dateObj = new Date(dateStr);
       const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
       return `${monthNames[dateObj.getMonth()]} ${dateObj.getDate()}, ${dateObj.getFullYear()}`;
     },
     formatTime(timeStr) {
-      // Split the time string and convert to a 12-hour format
-      const parts = timeStr.split(':');
-      let hour = parseInt(parts[0]);
-      const minute = parts[1];
+      if (!timeStr) return "";
+      const [hour, minute] = timeStr.split(':').map(Number);
       const suffix = hour >= 12 ? 'PM' : 'AM';
-      hour = hour % 12;
-      if (hour === 0) hour = 12;
-      return `${hour}:${minute} ${suffix}`;
+      const formattedHour = hour % 12 || 12;
+      return `${formattedHour}:${minute.toString().padStart(2, '0')} ${suffix}`;
     }
   },
-  mounted() {
+  created() {
     this.fetchMyEvents();
   }
 };
 </script>
 
 <style scoped>
-/* Overall DJ Page Styling */
 .dj-page {
   min-height: 100vh;
   background: linear-gradient(135deg, #7f00ff, #e100ff);
   color: #fff;
   font-family: 'Courier New', Courier, monospace;
-  padding: 2rem;
+  padding: 20px;
   display: flex;
   flex-direction: column;
 }
 
-/* Header */
+/* HEADER */
 .dj-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 20px;
 }
 .dj-title {
   font-size: 3rem;
@@ -142,7 +118,7 @@ export default {
   background: transparent;
   border: 2px solid #fff;
   color: #fff;
-  padding: 0.5rem 1rem;
+  padding: 10px 20px;
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.3s;
@@ -152,91 +128,83 @@ export default {
   color: #7f00ff;
 }
 
-/* Turntable Section */
-.turntable-section {
-  background-color: rgba(0, 0, 0, 0.3);
-  margin: 0 2rem 2rem;
-  padding: 2rem;
+/* CHANGE: DJ Images Section */
+.dj-images-section {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+.dj-image {
+  width: 500px; /* Adjust as needed for your layout */
+  height: auto;
   border-radius: 8px;
-  text-align: center;
-}
-.turntable-section h2 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  text-shadow: 2px 2px 4px #000;
-}
-.turntable {
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
-  flex-wrap: wrap;
-}
-.record-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.record-box {
-  width: 150px;
-  height: 150px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border: 2px dashed #fff;
-  border-radius: 50%;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.song-info {
-  font-size: 1rem;
-  text-shadow: 1px 1px 2px #000;
+  border: 2px solid #fff;
 }
 
-/* Events Section */
-.events-section {
-  background-color: rgba(0, 0, 0, 0.5);
-  margin: 0 2rem 2rem;
-  padding: 2rem;
-  border-radius: 8px;
+/* CREATE EVENT SECTION */
+.create-event-section {
   text-align: center;
+  margin-bottom: 30px;
 }
 .toggle-btn {
   background-color: #fff;
-  border: none;
   color: #7f00ff;
-  padding: 0.5rem 1rem;
+  padding: 10px 20px;
   font-size: 1.1rem;
-  margin-bottom: 1rem;
+  border: none;
   border-radius: 4px;
   cursor: pointer;
   transition: background 0.3s;
+  margin-bottom: 15px;
 }
 .toggle-btn:hover {
   background-color: #7f00ff;
   color: #fff;
 }
 .create-event-wrapper {
-  margin-bottom: 2rem;
+  max-width: 700px;
+  margin: 0 auto 30px auto;
 }
-.event-list {
-  list-style: none;
-  padding: 0;
-  max-width: 600px;
-  margin: 0 auto;
-  text-align: left;
+
+/* EVENTS SECTION */
+.events-section {
+  text-align: center;
+  margin-bottom: 30px;
 }
-.event-item {
-  border-bottom: 1px solid rgba(255,255,255,0.3);
-  padding: 0.75rem 0;
+.section-title {
+  font-size: 2rem;
+  margin-bottom: 15px;
+  text-shadow: 2px 2px 4px #000;
+}
+.large-boxes-container {
   display: flex;
-  justify-content: space-between;
-  font-size: 1.2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 20px;
 }
-.event-name {
+.large-box {
+  background-color: black;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 18px;
+  padding: 20px;
+  height: 400px;
+  width: calc(40% - 10px);
+  box-sizing: border-box;
+  border-radius: 12px;
+  border: 2px solid white;
+}
+.large-box p {
+  margin: 5px 0;
+  font-size: 16px;
+}
+.large-box p:first-child {
+  font-size: 20px;
   font-weight: bold;
-}
-.event-date,
-.event-time {
-  font-style: italic;
 }
 </style>
