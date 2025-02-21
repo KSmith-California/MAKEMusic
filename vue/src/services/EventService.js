@@ -1,13 +1,12 @@
 import axios from 'axios';
 
-// Use the VITE_REMOTE_API environment variable (which should be set to http://localhost:9000)
-const API_URL = `${import.meta.env.VITE_REMOTE_API}/events`;
+const http = axios.create({
+    baseURL: import.meta.env.VITE_REMOTE_API
+  });
 
 export default {
-    getEvents(name = '', date = '') {
-        return axios.get(API_URL, {
-            params: { name, date }
-        });
+    getEvents() {
+        return http.get('/events');
     },
 
     getEventById(eventId) {

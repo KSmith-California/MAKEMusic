@@ -1,49 +1,52 @@
 <template>
   <div class="dj-page">
     <header class="dj-header">
-      <h1>DJ Dashboard</h1>
+      <h1 class="dj-title">DJ Dashboard</h1>
       <button class="back-btn" @click="goToLanding">Back to Landing</button>
     </header>
-    
+
     <!-- Turntable Section with Placeholder Song Data -->
     <section class="turntable-section">
+      <h2>Now Playing</h2>
       <div class="turntable">
         <div class="record-container">
-          <img src="@/assets/record_current.png" alt="Current Song Record" class="record" />
+          <div class="record-box">
+            <p>Current Song Image</p>
+          </div>
           <p class="song-info">
-            Now Playing: {{ currentSong.title }} - {{ currentSong.artist }}
+            {{ currentSong.title }}<br />by {{ currentSong.artist }}
           </p>
         </div>
         <div class="record-container">
-          <img src="@/assets/record_next.png" alt="Next Song Record" class="record" />
+          <div class="record-box">
+            <p>Next Song Image</p>
+          </div>
           <p class="song-info">
-            Next Up: {{ nextSong.title }} - {{ nextSong.artist }}
+            {{ nextSong.title }}<br />by {{ nextSong.artist }}
           </p>
         </div>
       </div>
     </section>
-    
-    <!-- Create Event Form Toggle -->
-    <button class="toggle-button" @click="toggleCreateForm">
-      {{ showCreateForm ? 'Hide Create Event Form' : 'Create New Event' }}
-    </button>
-    
-    <!-- Create Event Form Component -->
-    <div v-if="showCreateForm" class="create-event-wrapper">
-      <CreateEventView @event-created="fetchMyEvents" />
-    </div>
-    
-    <!-- Event List Section -->
-    <section class="event-list-section">
+
+    <!-- Events Section with Create Event Form -->
+    <section class="events-section">
+      <button class="toggle-btn" @click="toggleCreateForm">
+        {{ showCreateForm ? 'Hide Create Event Form' : 'Create New Event' }}
+      </button>
+      <div v-if="showCreateForm" class="create-event-wrapper">
+        <CreateEventView @event-created="fetchMyEvents" />
+      </div>
       <h2>My Events</h2>
       <div v-if="events.length === 0">
         <p>No events created yet.</p>
       </div>
-      <ul v-else>
+      <ul v-else class="event-list">
         <li v-for="event in events" :key="event.eventID" class="event-item">
           <span class="event-name">{{ event.name }}</span>
-          <span class="event-date">{{ event.eventDate }}</span>
-          <span class="event-time">{{ event.startTime }} - {{ event.endTime }}</span>
+          <span class="event-date">{{ formatDate(event.eventDate) }}</span>
+          <span class="event-time">
+            {{ formatTime(event.startTime) }} - {{ formatTime(event.endTime) }}
+          </span>
         </li>
       </ul>
     </section>
@@ -61,7 +64,7 @@ export default {
     return {
       showCreateForm: false,
       events: [],
-      // Placeholder song data until the song queue is implemented
+      // Placeholder song data; replace with real data later
       currentSong: {
         title: 'Placeholder Song',
         artist: 'Placeholder Artist'
@@ -88,6 +91,22 @@ export default {
       } catch (error) {
         console.error('Error fetching events:', error);
       }
+    },
+    formatDate(dateStr) {
+      // Create a Date object from the string (assumed ISO format: YYYY-MM-DD)
+      const dateObj = new Date(dateStr);
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return `${monthNames[dateObj.getMonth()]} ${dateObj.getDate()}, ${dateObj.getFullYear()}`;
+    },
+    formatTime(timeStr) {
+      // Split the time string and convert to a 12-hour format
+      const parts = timeStr.split(':');
+      let hour = parseInt(parts[0]);
+      const minute = parts[1];
+      const suffix = hour >= 12 ? 'PM' : 'AM';
+      hour = hour % 12;
+      if (hour === 0) hour = 12;
+      return `${hour}:${minute} ${suffix}`;
     }
   },
   mounted() {
@@ -97,15 +116,15 @@ export default {
 </script>
 
 <style scoped>
+/* Overall DJ Page Styling */
 .dj-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #ff0099, #493240);
+  background: linear-gradient(135deg, #7f00ff, #e100ff);
   color: #fff;
   font-family: 'Courier New', Courier, monospace;
-  padding: 1rem;
+  padding: 2rem;
   display: flex;
   flex-direction: column;
-  align-items: center;
 }
 
 /* Header */
@@ -113,33 +132,38 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
-  max-width: 800px;
   margin-bottom: 2rem;
 }
-.dj-header h1 {
+.dj-title {
   font-size: 3rem;
-  text-shadow: 2px 2px #000;
+  text-shadow: 2px 2px 4px #000;
 }
 .back-btn {
   background: transparent;
   border: 2px solid #fff;
   color: #fff;
   padding: 0.5rem 1rem;
-  font-size: 1rem;
-  cursor: pointer;
   border-radius: 4px;
-  transition: background 0.3s ease;
+  cursor: pointer;
+  transition: background 0.3s;
 }
 .back-btn:hover {
   background: #fff;
-  color: #493240;
+  color: #7f00ff;
 }
 
 /* Turntable Section */
 .turntable-section {
-  margin-bottom: 2rem;
+  background-color: rgba(0, 0, 0, 0.3);
+  margin: 0 2rem 2rem;
+  padding: 2rem;
+  border-radius: 8px;
   text-align: center;
+}
+.turntable-section h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px #000;
 }
 .turntable {
   display: flex;
@@ -152,68 +176,58 @@ export default {
   flex-direction: column;
   align-items: center;
 }
-.record {
+.record-box {
   width: 150px;
   height: 150px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border: 2px dashed #fff;
   border-radius: 50%;
-  border: 5px solid #fff;
   margin-bottom: 0.5rem;
-  animation: spin 5s linear infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .song-info {
   font-size: 1rem;
-  text-shadow: 1px 1px #000;
+  text-shadow: 1px 1px 2px #000;
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* Toggle Button */
-.toggle-button {
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 2px solid #fff;
-  color: #fff;
-  font-size: 1.2rem;
-  padding: 0.5rem 1rem;
-  margin-bottom: 2rem;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-.toggle-button:hover {
-  background-color: rgba(255, 255, 255, 0.3);
-}
-
-/* Create Event Wrapper */
-.create-event-wrapper {
-  width: 100%;
-  max-width: 700px;
-  margin-bottom: 2rem;
-}
-
-/* Event List Section */
-.event-list-section {
-  background-color: rgba(0, 0, 0, 0.4);
-  padding: 1rem;
+/* Events Section */
+.events-section {
+  background-color: rgba(0, 0, 0, 0.5);
+  margin: 0 2rem 2rem;
+  padding: 2rem;
   border-radius: 8px;
-  width: 100%;
-  max-width: 700px;
-  margin: 0 auto;
   text-align: center;
 }
-.event-list-section h2 {
-  font-size: 2rem;
+.toggle-btn {
+  background-color: #fff;
+  border: none;
+  color: #7f00ff;
+  padding: 0.5rem 1rem;
+  font-size: 1.1rem;
   margin-bottom: 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
 }
-.event-list-section ul {
+.toggle-btn:hover {
+  background-color: #7f00ff;
+  color: #fff;
+}
+.create-event-wrapper {
+  margin-bottom: 2rem;
+}
+.event-list {
   list-style: none;
   padding: 0;
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: left;
 }
 .event-item {
-  padding: 0.5rem;
   border-bottom: 1px solid rgba(255,255,255,0.3);
+  padding: 0.75rem 0;
   display: flex;
   justify-content: space-between;
   font-size: 1.2rem;

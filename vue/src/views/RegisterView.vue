@@ -17,6 +17,15 @@
         <label for="confirmPassword">Confirm Password</label>
         <input type="password" id="confirmPassword" v-model="user.confirmPassword" required />
       </div>
+      <div class="form-input-group">
+        <label for="role">Select Role</label>
+        <select id="role" v-model="user.role" required>
+          <option value="" disabled>Select a role</option>
+          <option value="user">User</option>
+          <option value="host">Host</option>
+          <option value="dj">DJ</option>
+        </select>
+      </div>
       <button type="submit">Create Account</button>
       <p><router-link v-bind:to="{ name: 'login' }">You look familiar. Log in!</router-link></p>
     </form>
