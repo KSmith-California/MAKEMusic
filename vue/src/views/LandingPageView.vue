@@ -47,6 +47,32 @@
             <!-- Removed extra DJ line so it matches original layout -->
           </div>
         </div>
+
+        <!-- Spotify Playlist Section -->
+        <div class="playlist-section">
+          <h2 class="playlist-title"> {{ playlistName || "Featured Playlists" }} </h2>
+
+
+          <ul v-if="playlists.length">
+            <li v-for="(track, index) in playlists" :key="index">
+              <img :src="track.images[0]?.url" alt="Album Cover" width="50" />
+              <strong>{{ track.name }}</strong> - {{ track.artists }}
+              <p><strong>Genre:</strong> {{ track.genre }}</p>
+
+      <!-- Spotify Embed Player -->
+              <iframe
+                  :src="`https://open.spotify.com/embed/track/${track.id}`"
+                  width="300"
+                  height="80"
+                  frameborder="0"
+                  allow="encrypted-media"
+              ></iframe>
+            </li>
+          </ul>
+
+
+          <p v-if="playlists.length === 0" class="loading-text">Loading playlists...</p>
+        </div>
       </div>
     </div>
   </div>
@@ -54,6 +80,10 @@
 
 <script>
 import EventService from '../services/EventService';
+// import { getPlaylists } from "@/services/Spotify"; // Ensure this function exists in spotify.js
+import SpotifyService from '../services/SpotifyService';
+
+
 export default {
   name: 'LandingPageView',
   data() {
@@ -70,7 +100,9 @@ export default {
         1: 'DJ Cool',
         4: 'DJ Funky',
         7: 'DJ Smooth'
-      }
+      },
+      playlists: [], // Store Spotify playlists
+      token: ''
     };
   },
   computed: {
@@ -115,10 +147,57 @@ export default {
       const suffix = hour >= 12 ? 'PM' : 'AM';
       const formattedHour = hour % 12 || 12;
       return `${formattedHour}:${minute.toString().padStart(2, '0')} ${suffix}`;
+    },
+    async fetchPlaylists() {
+      this.playlists = [];
+    },
+    async fetchPlaylists() {
+      try {
+        // Step 1: Get token
+        const tokenResponse = await SpotifyService.getToken();
+        const token = tokenResponse.data.access_token;
+
+        // Step 2: Fetch playlist using the token
+        const playlistResponse = await SpotifyService.getPlaylist(token);
+        console.log("Fetched Playlist Data:", playlistResponse.data); // Debugging
+
+        // Step 3: Extract playlist name
+        this.playlistName = playlistResponse.data.name;
+
+        // Step 4: Fetch genres for each track’s artist
+        this.playlists = await Promise.all(playlistResponse.data.tracks.items.map(async (track) => {
+            const artistId = track.track.artists[0].id;
+
+            // Fetch artist details to get the genre
+            let genre = "Unknown";
+            try {
+                const artistResponse = await SpotifyService.getArtistGenres(token, artistId);
+                genre = artistResponse.data.genres.length ? artistResponse.data.genres.join(", ") : "Unknown";
+            } catch (err) {
+                console.error(`Error fetching genre for artist ${artistId}:`, err);
+            }
+
+            return {
+                id: track.track.id,
+                name: track.track.name,
+                images: track.track.album.images,
+                artists: track.track.artists.map(artist => artist.name).join(", "),
+                genre: genre  // Add genre to each track
+            };
+        }));
+
+    } catch (error) {
+        console.error("Error fetching Spotify playlists:", error);
     }
+  }
+    
   },
   created() {
     this.retrieveEvents();
+    this.fetchPlaylists(); // Fetch Spotify playlists when the component is created
+    
+    
+
   }
 };
 </script>
@@ -135,8 +214,6 @@ export default {
   height: auto;
   object-fit: cover;
 }
-
-/* Navigation bar could be added here if needed */
 
 /* Landing Page Container (unchanged) */
 .landing-page {
@@ -200,7 +277,6 @@ export default {
 .large-input {
   width: 300px;
 }
-/* Inline checkbox styling */
 .inline-checkbox {
   display: flex;
   align-items: center;
@@ -237,5 +313,43 @@ export default {
 .large-box p {
   margin: 5px 0;
   font-size: 16px;
+}
+
+/* Playlist Section */
+.playlist-section {
+  margin-top: 40px;
+  width: 100%;
+  text-align: center;
+}
+.playlist-title {
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+.playlist-container {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+.playlist-card {
+  background-color: white;
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+  width: 150px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+.playlist-image {
+  width: 150px;
+  height: 150px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+.loading-text {
+  color: white;
+  font-size: 16px;
+  margin-top: 10px;
 }
 </style>
