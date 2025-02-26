@@ -6,7 +6,7 @@
       <button class="back-btn" @click="goToLanding">Back to Landing</button>
     </header>
 
-    <!-- CHANGE: Removed the entire turntable section and replaced with two images -->
+    <!-- DJ Images Section -->
     <section class="dj-images-section">
       <img src="MAKEDJ2.png" alt="DJ Image 1" class="dj-image" />
       <img src="MAKEDJ3.png" alt="DJ Image 2" class="dj-image" />
@@ -22,6 +22,55 @@
       </div>
     </section>
 
+    <!-- CREATE PLAYLIST FORM TOGGLE -->
+    <section class="create-playlist-section">
+      <button class="toggle-btn" @click="toggleCreatePlaylistForm">
+        {{ showCreatePlaylistForm ? 'Hide Create Playlist Form' : 'Create New Playlist' }}
+      </button>
+      <div v-if="showCreatePlaylistForm" class="create-playlist-wrapper">
+        <!-- Playlist Name Input -->
+        <input
+          v-model="playlistNameInput"
+          type="text"
+          placeholder="Enter playlist name"
+          class="playlist-name-input"
+        />
+
+        <select v-model="selectedGenre" class="genre-select">
+  <option value="">All Genres</option>
+  <option v-for="genre in availableGenres" :key="genre" :value="genre">
+    {{ genre }}
+  </option>
+</select>
+
+        <!-- Song Search Input -->
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search for a song..."
+          @input="searchSongs"
+          class="search-input"
+        />
+        
+        <div v-if="searchResults.length">
+          <div v-for="track in searchResults" :key="track.id" class="track-card">
+            <!-- Checkbox for Song Selection -->
+            <input
+              type="checkbox"
+              :value="track.id"
+              v-model="selectedTracks"
+              :id="track.id"
+            />
+            <label :for="track.id">
+              <img :src="track.album.images[0]?.url" alt="Album Cover" class="album-cover" />
+              <p>{{ track.name }} - {{ track.artists[0].name }}</p>
+            </label>
+          </div>
+        </div>
+        <button @click="createNewPlaylist" class="create-btn">Create Playlist</button>
+      </div>
+    </section>
+
     <!-- EVENTS LIST -->
     <section class="events-section">
       <h2 class="section-title">My Events</h2>
@@ -34,12 +83,39 @@
         </div>
       </div>
     </section>
+
+    <!-- SPOTIFY PLAYLIST -->
+    <div class="playlist-section">
+      <h2 class="playlist-title">{{ playlistName }}</h2>
+      <div class="playlist-container">
+        <div v-for="(track, index) in playlists" :key="index" class="playlist-card">
+          <!-- Album Cover -->
+          <img :src="track.images[0]?.url" alt="Album Cover" class="album-cover" />
+
+          <!-- Track Info -->
+          <div class="track-info">
+            <h3 class="track-name">{{ track.name }}</h3>
+            <p class="track-artist"><strong>Artist:</strong> {{ track.artists }}</p>
+            <p class="track-genre"><strong>Genre:</strong> {{ track.genre }}</p>
+          </div>
+
+          <!-- Embedded Player -->
+          <iframe
+            :src="`https://open.spotify.com/embed/track/${track.id}`"
+            class="spotify-player"
+            frameborder="0"
+            allow="encrypted-media"
+          ></iframe>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import EventService from '@/services/EventService';
 import CreateEventView from '@/views/CreateEventView.vue';
+import SpotifyService from '../services/SpotifyService';
 
 export default {
   name: 'DJPage',
@@ -47,14 +123,24 @@ export default {
   data() {
     return {
       showCreateForm: false,
+      showCreatePlaylistForm: false,
       events: [],
-      userId: 4,    // For testing, set dynamically in production
+      userId: 4, // For testing, set dynamically in production
       userRole: 'DJ',
       djUsernames: {
         1: 'DJ Cool',
         4: 'DJ Funky',
         7: 'DJ Smooth'
-      }
+      },
+      playlists: [],
+      token: '',
+      playlistName: '',
+      playlistNameInput: '', // Track the playlist name input
+      searchQuery: '',
+      searchResults: [],
+      selectedTracks: [], // Array of selected track IDs
+      availableGenres: [],
+      selectedGenre: ''
     };
   },
   methods: {
@@ -64,11 +150,16 @@ export default {
     toggleCreateForm() {
       this.showCreateForm = !this.showCreateForm;
     },
-    fetchMyEvents() {
-      EventService.getEvents().then(response => {
-        // Shows only events created by this DJ
+    toggleCreatePlaylistForm() {
+      this.showCreatePlaylistForm = !this.showCreatePlaylistForm;
+    },
+    async fetchMyEvents() {
+      try {
+        const response = await EventService.getEvents();
         this.events = response.data.filter(event => event.createdBy === this.userId);
-      });
+      } catch (error) {
+        console.error("Error fetching events:", error);
+      }
     },
     getDJUsername(djId) {
       return this.djUsernames[djId] || `DJ ${djId}`;
@@ -84,10 +175,115 @@ export default {
       const suffix = hour >= 12 ? 'PM' : 'AM';
       const formattedHour = hour % 12 || 12;
       return `${formattedHour}:${minute.toString().padStart(2, '0')} ${suffix}`;
+    },
+    async fetchPlaylists() {
+      try {
+        // Get token
+        const tokenResponse = await SpotifyService.getToken();
+        this.token = tokenResponse.data.access_token;
+
+        // Fetch playlist using the token
+        const playlistResponse = await SpotifyService.getPlaylist(this.token);
+        console.log("Fetched Playlist Data:", playlistResponse.data); // Debugging
+        this.playlistName = playlistResponse.data.name;
+        this.playlists = playlistResponse.data.tracks.items.map((track) => ({
+          id: track.track.id,
+          name: track.track.name,
+          images: track.track.album.images,
+          artists: track.track.artists.map(artist => artist.name).join(", "),
+          genre: "Unknown" // Placeholder for genre
+        }));
+      } catch (error) {
+        console.error("Error fetching Spotify playlists:", error);
+      }
+    },
+    async searchSongs() {
+      if (this.searchQuery.trim() === "") {
+        this.searchResults = [];
+        return;
+    }
+
+      try {
+        const tokenResponse = await SpotifyService.getToken();
+        const token = tokenResponse.data.access_token;
+
+        // If a genre is selected, add it to the query
+        let query = this.searchQuery;
+        if (this.selectedGenre) {
+      query += ` genre:"${this.selectedGenre}"`;
+    }
+
+        const searchResponse = await SpotifyService.searchTracks(query, token);
+        const tracks = searchResponse.data.tracks.items;
+
+        this.searchResults = tracks.map(track => ({
+          id: track.id,
+          name: track.name,
+          album: track.album,
+          artists: track.artists,
+          genre: this.selectedGenre || "Unknown"
+        }));
+    }     catch (error) {
+        console.error("Error searching for songs:", error);
+  }
+},
+    async createNewPlaylist() {
+      if (!this.selectedTracks.length) {
+        alert("Please select at least one song to create the playlist.");
+        return;
+      }
+
+      // Use the inputted playlist name or fallback to a default name
+      const playlistName = this.playlistNameInput.trim() || "My Custom Playlist";
+
+      try {
+        // Get token
+        const tokenResponse = await SpotifyService.getToken();
+        this.token = tokenResponse.data.access_token;
+
+        // Create the playlist
+        const playlistResponse = await SpotifyService.createPlaylist(
+          this.userId,
+          playlistName,
+          this.token
+        );
+
+        // Add selected tracks to the new playlist
+        await SpotifyService.addTracksToPlaylist(playlistResponse.data.id, this.selectedTracks, this.token);
+
+        this.playlistName = playlistName; // Set playlist name
+        alert("Playlist created successfully!");
+      } catch (error) {
+        console.error("Error creating playlist:", error);
+      }
+    },
+
+    async fetchGenres() {
+    try {
+      console.log("Fetching token...");
+      const tokenResponse = await SpotifyService.getToken();
+      const token = tokenResponse.data.access_token;
+      console.log("Token received:", token);
+
+      console.log("Fetching available genres...");
+      const genreResponse = await SpotifyService.getAvailableGenres(token);
+      console.log("Genre Response:", genreResponse.data);
+
+      this.availableGenres = genreResponse.data.genres || []; // Prevents undefined issues
+    } catch (error) {
+      console.error("Error fetching genres:", error);
     }
   },
+
+  },
+
+  
+
   created() {
     this.fetchMyEvents();
+    this.fetchPlaylists();
+    this.fetchGenres();
+    
   }
 };
 </script>
@@ -147,6 +343,8 @@ export default {
   text-align: center;
   margin-bottom: 30px;
 }
+
+
 .toggle-btn {
   background-color: #fff;
   color: #7f00ff;
@@ -165,6 +363,13 @@ export default {
 .create-event-wrapper {
   max-width: 700px;
   margin: 0 auto 30px auto;
+}
+
+/* CREATE PLAYLIST SECTION */
+
+.create-playlist-section {
+  text-align: center;
+  margin-bottom: 30px;
 }
 
 /* EVENTS SECTION */
@@ -207,4 +412,52 @@ export default {
   font-size: 20px;
   font-weight: bold;
 }
+  
+
+/*SPOTIFY  */
+
+.playlist-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.playlist-card {
+  display: flex;
+  align-items: center;
+  background: #1e1e1e;
+  padding: 15px;
+  border-radius: 10px;
+  width: 600px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.album-cover {
+  width: 80px;
+  height: 80px;
+  border-radius: 5px;
+  margin-right: 15px;
+}
+
+.track-info {
+  flex-grow: 1;
+}
+
+.track-name {
+  font-size: 16px;
+  color: #fff;
+}
+
+.track-artist,
+.track-genre {
+  font-size: 14px;
+  color: #bbb;
+}
+
+.spotify-player {
+  width: 300px;
+  height: 80px;
+}
+
 </style>

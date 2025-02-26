@@ -2,18 +2,16 @@
   <div>
     <header class="header">
       <img src="/landingGif.gif" alt="Header GIF" class="header-gif" />
-      <!-- CHANGE: Filtering section now overlaps the hero GIF -->
+      <!-- Filtering Section -->
       <div class="filter-container">
         <h2 class="filter-title">Find Your Event</h2>
         <div class="filter-row">
-          <!-- "Find your event" input -->
           <input
             type="text"
             v-model="nameFilter"
             placeholder="Find your event"
             class="filter-input large-input"
           />
-          <!-- Date filter remains unchanged -->
           <input
             type="date"
             v-model="dateFilter"
@@ -22,12 +20,10 @@
           />
         </div>
         <div class="filter-row">
-          <!-- CHANGE: "Find your DJ" dropdown showing DJ names -->
           <select v-model="djFilter" class="filter-input large-input">
             <option value="">Find your DJ</option>
             <option v-for="dj in uniqueDJs" :key="dj" :value="dj">{{ dj }}</option>
           </select>
-          <!-- CHANGE: Inline "My events only" checkbox -->
           <label class="checkbox-label inline-checkbox">
             <input type="checkbox" v-model="filterMyEvents" />
             My events only
@@ -38,38 +34,40 @@
 
     <div class="landing-page">
       <div class="container">
-        <!-- CHANGE: Upcoming events are restored to original layout -->
+        <!-- Upcoming Events Section -->
         <div class="large-boxes-container">
           <div v-for="(event, index) in filteredEvents" :key="index" class="large-box">
             <p>{{ event.name }}</p>
             <p>DATE: {{ formatDate(event.eventDate) }}</p>
             <p>TIME: {{ formatTime(event.startTime) }} - {{ formatTime(event.endTime) }}</p>
-            <!-- Removed extra DJ line so it matches original layout -->
           </div>
         </div>
 
-        <!-- Spotify Playlist Section -->
+        <!-- 🎵 Spotify Playlist Section -->
         <div class="playlist-section">
-          <h2 class="playlist-title"> {{ playlistName || "Featured Playlists" }} </h2>
+          <h2 class="playlist-title">{{ playlistName || "Featured Playlists" }}</h2>
 
+          <div v-if="playlists.length" class="playlist-container">
+            <div v-for="(track, index) in playlists" :key="index" class="playlist-card">
+              <!-- Album Cover -->
+              <img :src="track.images[0]?.url" alt="Album Cover" class="album-cover" />
 
-          <ul v-if="playlists.length">
-            <li v-for="(track, index) in playlists" :key="index">
-              <img :src="track.images[0]?.url" alt="Album Cover" width="50" />
-              <strong>{{ track.name }}</strong> - {{ track.artists }}
-              <p><strong>Genre:</strong> {{ track.genre }}</p>
+              <!-- Track Info -->
+              <div class="track-info">
+                <h3 class="track-name">{{ track.name }}</h3>
+                <p class="track-artist"><strong>Artist:</strong> {{ track.artists }}</p>
+                <p class="track-genre"><strong>Genre:</strong> {{ track.genre || "Unknown" }}</p>
+              </div>
 
-      <!-- Spotify Embed Player -->
+              <!-- Spotify Embedded Player -->
               <iframe
-                  :src="`https://open.spotify.com/embed/track/${track.id}`"
-                  width="300"
-                  height="80"
-                  frameborder="0"
-                  allow="encrypted-media"
+                :src="`https://open.spotify.com/embed/track/${track.id}`"
+                class="spotify-player"
+                frameborder="0"
+                allow="encrypted-media"
               ></iframe>
-            </li>
-          </ul>
-
+            </div>
+          </div>
 
           <p v-if="playlists.length === 0" class="loading-text">Loading playlists...</p>
         </div>
@@ -351,5 +349,51 @@ export default {
   color: white;
   font-size: 16px;
   margin-top: 10px;
+}
+
+/*SPOTIFY  */
+
+.playlist-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+}
+
+.playlist-card {
+  display: flex;
+  align-items: center;
+  background: #1e1e1e;
+  padding: 15px;
+  border-radius: 10px;
+  width: 600px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.album-cover {
+  width: 80px;
+  height: 80px;
+  border-radius: 5px;
+  margin-right: 15px;
+}
+
+.track-info {
+  flex-grow: 1;
+}
+
+.track-name {
+  font-size: 16px;
+  color: #fff;
+}
+
+.track-artist,
+.track-genre {
+  font-size: 14px;
+  color: #bbb;
+}
+
+.spotify-player {
+  width: 300px;
+  height: 80px;
 }
 </style>
