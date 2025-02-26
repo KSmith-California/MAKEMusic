@@ -16,7 +16,7 @@
           <input type="text" id="username" v-model="user.username" required autofocus />
         </div>
         <div class="form-input-group">
-          <label for="handle">Handle (@handle)</label>  <!-- NEW: Added handle input -->
+          <label for="handle">@Handle</label>
           <input type="text" id="handle" v-model="user.handle" required />
         </div>
         <div class="form-input-group">
@@ -54,7 +54,7 @@ export default {
     return {
       user: {
         username: '',
-        handle: '',  // NEW: Users must enter handle manually
+        handle: '',
         password: '',
         confirmPassword: '',
         role: 'user',
@@ -72,10 +72,7 @@ export default {
         authService.register(this.user)
           .then((response) => {
             if (response.status === 201) {
-              this.$router.push({
-                path: '/login',
-                query: { registration: 'success' },
-              });
+              this.$router.push({ path: '/login', query: { registration: 'success' } });
             }
           })
           .catch((error) => {
@@ -87,6 +84,6 @@ export default {
           });
       }
     }
-  },
+  }
 };
 </script>
