@@ -1,12 +1,10 @@
 <template>
   <div id="register" class="text-center">
-    <!-- CHANGE: Added background video element -->
     <video autoplay loop muted playsinline class="background-video">
       <source src="/MotionBackground.mp4" type="video/mp4" />
       Your browser does not support the video tag.
     </video>
 
-    <!-- CHANGE: Wrapped the form in an overlay container for readability -->
     <div class="register-overlay">
       <form @submit.prevent="register">
         <h1>SIGN UP. LOG IN. TAP IN.</h1>
@@ -16,6 +14,10 @@
         <div class="form-input-group">
           <label for="username">Username</label>
           <input type="text" id="username" v-model="user.username" required autofocus />
+        </div>
+        <div class="form-input-group">
+          <label for="handle">Handle (@handle)</label>  <!-- NEW: Added handle input -->
+          <input type="text" id="handle" v-model="user.handle" required />
         </div>
         <div class="form-input-group">
           <label for="password">Password</label>
@@ -52,6 +54,7 @@ export default {
     return {
       user: {
         username: '',
+        handle: '',  // NEW: Users must enter handle manually
         password: '',
         confirmPassword: '',
         role: 'user',
@@ -83,53 +86,7 @@ export default {
             }
           });
       }
-    },
-    clearErrors() {
-      this.registrationErrors = false;
-      this.registrationErrorMsg = 'There were problems registering this user.';
-    },
+    }
   },
 };
 </script>
-
-<style scoped>
-/* CHANGE: Background video styling */
-.background-video {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: -1;
-}
-
-#register {
-  position: relative;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-family: Arial, Helvetica, sans-serif;
-  color: black;
-}
-
-/* CHANGE: Overlay container to hold form content */
-.register-overlay {
-  position: relative;
-  z-index: 1;
-  background: rgba(255, 255, 255, 0.8); /* Semi-transparent background for readability */
-  padding: 2rem;
-  max-width: 400px;
-  width: 100%;
-  border-radius: 8px;
-}
-
-/* Form styling remains unchanged */
-.form-input-group {
-  margin-bottom: 1rem;
-}
-label {
-  margin-right: 0.5rem;
-}
-</style>
