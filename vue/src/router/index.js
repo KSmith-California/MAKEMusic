@@ -11,7 +11,20 @@ import LoginView from '../views/LoginView.vue';
 import LogoutView from '../views/LogoutView.vue';
 import RegisterView from '../views/RegisterView.vue';
 
+//spotify
+import Playlists from '../views/Playlists.vue';
+import PlaylistEditor from '../views/PlaylistEditor.vue';
+import SpotifyLogin from '../views/SpotifyLogin.vue';
+import SpotifyCallback from '../views/SpotifyCallback.vue';
+import SpotifyTestComponent from '../components/SpotifyTest.vue';
+
 const routes = [
+  {
+    path: '/spotify',
+    name: 'spotify',
+    component: SpotifyTestComponent,
+    meta: { requiresAuth: false }
+  },
   {
     path: '/',
     name: 'landing',
@@ -60,6 +73,30 @@ const routes = [
     name: 'hostPage',
     component: HostPage,
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/playlists',
+    name: 'playlists',
+    component: Playlists,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/playlist-editor',
+    name: 'playlistEditor',
+    component: PlaylistEditor,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/spotify-login',
+    name: 'spotifyLogin',
+    component: SpotifyLogin,
+    meta: {requiresAuth: false}
+  },
+  {
+    path: '/spotify-callback',
+    name: 'spotifyCallback',
+    component: SpotifyCallback,
+    meta: {requiresAuth: false}
   }
 ];
 
