@@ -1,5 +1,8 @@
 <template>
   <div class="host-page">
+    <!-- Background Image -->
+    <div class="background"></div>
+
     <!-- Header -->
     <header class="host-header">
       <h1>Host Dashboard</h1>
@@ -9,16 +12,19 @@
     <!-- Event List Section -->
     <section class="event-list-section">
       <h2>My Assigned Events</h2>
-      
+
       <!-- Show events if available -->
-      <ul v-if="events.length > 0" class="event-list">
-        <li v-for="event in events" :key="event.eventID" class="event-item">
-          <span class="event-name">{{ event.name }}</span>
-          <span class="event-date">{{ formatDate(event.eventDate) }}</span>
-          <span class="event-time">{{ formatTime(event.startTime) }} - {{ formatTime(event.endTime) }}</span>
-        </li>
-      </ul>
-      
+      <div v-if="events.length > 0" class="event-list">
+        <div v-for="event in events" :key="event.eventID" class="event-item">
+          <img :src="getTapeImage(event.eventID)" class="cassette-tape" alt="Cassette Tape">
+          <div class="event-info">
+            <span class="event-name">{{ event.name }}</span>
+            <span class="event-date">{{ formatDate(event.eventDate) }}</span>
+            <span class="event-time">{{ formatTime(event.startTime) }} - {{ formatTime(event.endTime) }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Show message if no events found -->
       <p v-else class="no-events">No events assigned to you.</p>
     </section>
@@ -26,11 +32,19 @@
 </template>
 
 <script>
+import bluetape from '@/assets/bluetape.png';
+import coraltape from '@/assets/coraltape.png';
+import greentape from '@/assets/greentape.png';
+import lilactape from '@/assets/lilactape.png';
+import limetape from '@/assets/limetape.png';
+import sunflowertape from '@/assets/sunflowertape.png';
+
 export default {
   name: 'HostPage',
   data() {
     return {
-      events: []
+      events: [],
+      tapeImages: [bluetape, coraltape, greentape, limetape, lilactape, sunflowertape]
     };
   },
   methods: {
@@ -53,6 +67,11 @@ export default {
       } catch (error) {
         console.error('Error fetching events for host:', error);
       }
+    },
+
+    // Assign a cassette tape to each event
+    getTapeImage(eventID) {
+      return this.tapeImages[eventID % this.tapeImages.length]; // Rotate tapes based on event ID
     },
 
     // Format date (e.g., "2025-06-15" → "Jun 15, 2025")
@@ -80,10 +99,20 @@ export default {
 </script>
 
 <style scoped>
+/* 🌟 Background Styling */
+.background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: url('@/assets/hostbackground.png') no-repeat center center/cover;
+  z-index: -1;
+}
+
 /* 🌟 Host Dashboard Styling */
 .host-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #00d2ff, #3a47d5); /* Smooth blue gradient */
   color: #fff;
   font-family: 'Courier New', Courier, monospace;
   padding: 2rem;
@@ -126,28 +155,41 @@ export default {
 
 /* 🌟 Event List */
 .event-list {
-  list-style: none;
-  padding: 0;
-  text-align: left;
-  margin: 0 auto;
-  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 }
 .event-item {
-  background: rgba(255, 255, 255, 0.2);
-  padding: 1rem;
-  border-radius: 6px;
-  margin-bottom: 1rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 1.1rem;
+  position: relative;
+  width: 350px;
+}
+.cassette-tape {
+  width: 100%;
+  display: block;
+  border-radius: 10px;
+}
+.event-info {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: black;
+  text-align: center;
+  font-weight: bold;
+  text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.8);
+  font-size: 1.2rem;
+  width: 90%;
 }
 .event-name {
+  display: block;
+  font-size: 1.5rem;
   font-weight: bold;
 }
 .event-date,
 .event-time {
   font-style: italic;
+  font-size: 1.1rem;
 }
 
 /* 🌟 No Events Message */

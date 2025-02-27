@@ -7,7 +7,7 @@ import java.util.Set;
 
 /**
  * Represents a User in the system.
- * A user has a unique ID, username, password, and assigned roles.
+ * A user has a unique ID, username, password, assigned roles, and a handle.
  */
 public class User {
 
@@ -16,6 +16,7 @@ public class User {
    @JsonIgnore
    private String password;
    private Set<Authority> authorities;
+   private String handle; // Added handle
 
    public User() {
       this.authorities = new HashSet<>();
@@ -33,59 +34,44 @@ public class User {
       }
    }
 
-   /**
-    * Gets the unique identifier of the user.
-    */
+   // Getters and Setters
    public int getId() {
       return id;
    }
 
-   /**
-    * Sets the unique identifier of the user.
-    */
    public void setId(int id) {
       this.id = id;
    }
 
-   /**
-    * Gets the username of the user.
-    */
    public String getUsername() {
       return username;
    }
 
-   /**
-    * Sets the username of the user.
-    */
    public void setUsername(String username) {
       this.username = username;
    }
 
-   /**
-    * Gets the hashed password of the user.
-    */
    public String getPassword() {
       return password;
    }
 
-   /**
-    * Sets the hashed password of the user.
-    */
    public void setPassword(String password) {
       this.password = password;
    }
 
-   /**
-    * Gets the set of authorities (roles) assigned to the user.
-    */
    public Set<Authority> getAuthorities() {
       return authorities;
    }
 
-   /**
-    * Sets the authorities (roles) assigned to the user.
-    */
    public void setAuthorities(Set<Authority> authorities) {
       this.authorities = authorities;
+   }
+
+   public String getHandle() { // Added getter
+      return handle;
+   }
+
+   public void setHandle(String handle) { // Added setter
+      this.handle = handle;
    }
 }

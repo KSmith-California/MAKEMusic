@@ -49,7 +49,8 @@ public class JdbcUserDao implements UserDao {
         try {
             int newUserId = jdbcTemplate.queryForObject(sql, Integer.class, username, passwordHash, role);
             return getUserById(newUserId);
-        } catch (CannotGetJdbcConnectionException e) {e.printStackTrace();
+        } catch (CannotGetJdbcConnectionException e) {
+            e.printStackTrace();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Database connection error");
         } catch (DataIntegrityViolationException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username already exists");
@@ -78,12 +79,17 @@ public class JdbcUserDao implements UserDao {
     public User getUserByUsername(String username) {
         if (username == null) throw new IllegalArgumentException("Username cannot be null");
 
+        System.out.println("Login Attempt: Searching for username -> " + username);
+
         String sql = "SELECT user_id, username, password_hash, role FROM users WHERE username = LOWER(TRIM(?))";
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql, username);
 
         if (rowSet.next()) {
+            System.out.println("User found in DB: " + rowSet.getString("username"));
+            System.out.println("Stored Password Hash: " + rowSet.getString("password_hash"));
             return mapRowToUser(rowSet);
         } else {
+            System.out.println("Login Failed: User not found - " + username);
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found in database.");
         }
     }
@@ -93,7 +99,7 @@ public class JdbcUserDao implements UserDao {
      */
     @Override
     public List<User> getUsers() {
-        String sql = "SELECT user_id, username, role FROM users";
+        String sql = "SELECT user_id, username, password_hash, role FROM users";
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql);
 
         List<User> users = new ArrayList<>();
@@ -108,14 +114,12 @@ public class JdbcUserDao implements UserDao {
      */
     @Override
     public List<User> getDJs() {
-        String sql = "SELECT user_id, username FROM users WHERE role = 'ROLE_DJ'";
+        String sql = "SELECT user_id, username, password_hash, role FROM users WHERE role = 'ROLE_DJ'";
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql);
 
         List<User> djs = new ArrayList<>();
         while (rowSet.next()) {
-            User user = new User();
-            user.setId(rowSet.getInt("user_id"));
-            user.setUsername(rowSet.getString("username"));
+            User user = mapRowToUser(rowSet);
             user.setAuthorities(Set.of(new Authority("ROLE_DJ")));
             djs.add(user);
         }
@@ -131,14 +135,7 @@ public class JdbcUserDao implements UserDao {
         SqlRowSet rowSet = jdbcTemplate.queryForRowSet(sql);
         List<User> hosts = new ArrayList<>();
         while (rowSet.next()) {
-            User user = new User();
-            user.setId(rowSet.getInt("user_id"));
-            user.setUsername(rowSet.getString("username"));
-            // For security, you might not want to set the password in the response.
-            user.setPassword(rowSet.getString("password_hash"));
-            // Authorities can be set if needed, e.g.:
-            // user.setAuthorities(Set.of(new Authority(rowSet.getString("role"))));
-            hosts.add(user);
+            hosts.add(mapRowToUser(rowSet));
         }
         return hosts;
     }
@@ -152,6 +149,10 @@ public class JdbcUserDao implements UserDao {
         user.setUsername(rowSet.getString("username"));
         user.setPassword(rowSet.getString("password_hash"));
         user.setAuthorities(Set.of(new Authority(rowSet.getString("role"))));
+
+        // Optional: Log user mapping
+        System.out.println("Mapping user: " + user.getUsername());
+
         return user;
     }
 }
